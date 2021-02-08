@@ -1,0 +1,609 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#ifndef APSTUDIO_INVOKED
+#include "targetver.h"
+#endif
+#include "afxres.h"
+#include "verrsrc.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Русский (Россия) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+LANGUAGE LANG_RUSSIAN, SUBLANG_DEFAULT
+#pragma code_page(1251)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#ifndef APSTUDIO_INVOKED\r\n"
+    "#include ""targetver.h""\r\n"
+    "#endif\r\n"
+    "#include ""afxres.h""\r\n"
+    "#include ""verrsrc.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\n"
+    "#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)\r\n"
+    "LANGUAGE 25, 1\r\n"
+    "#include ""res\\AssemblyConfig.rc2""  // ресурсы, не редактируемые в Microsoft Visual C++\r\n"
+    "#include ""l.RUS\\afxres.rc""      // Стандартные компоненты\r\n"
+    "#include ""l.RUS\\afxprint.rc""    // ресурсы для печати/предварительного просмотра\r\n"
+    "#endif\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\AssemblyConfig.ico"
+
+IDR_AssemblyConfigTYPE  ICON                    "res\\AssemblyConfigDoc.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
+
+IDB_BITMAP1             BITMAP                  "res\\Kol.bmp"
+
+IDB_BITMAP2             BITMAP                  "res\\Pod.bmp"
+
+IDB_BITMAP3             BITMAP                  "res\\Shest.bmp"
+
+IDB_BITMAP4             BITMAP                  "res\\Val1.bmp"
+
+IDB_BITMAP5             BITMAP                  "res\\Val2.bmp"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Toolbar
+//
+
+IDR_MAINFRAME TOOLBAR 16, 15
+BEGIN
+    BUTTON      ID_FILE_NEW
+    BUTTON      ID_FILE_OPEN
+    BUTTON      ID_FILE_SAVE
+    SEPARATOR
+    BUTTON      ID_EDIT_CUT
+    BUTTON      ID_EDIT_COPY
+    BUTTON      ID_EDIT_PASTE
+    SEPARATOR
+    BUTTON      ID_FILE_PRINT
+    BUTTON      ID_APP_ABOUT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MAINFRAME MENU
+BEGIN
+    POPUP "&Файл"
+    BEGIN
+        MENUITEM "Созд&ать\tCtrl+N",            ID_FILE_NEW
+        MENUITEM "&Открыть...\tCtrl+O",         ID_FILE_OPEN
+        MENUITEM "Со&хранить\tCtrl+S",          ID_FILE_SAVE
+        MENUITEM "Сохранить &как...",           ID_FILE_SAVE_AS
+        MENUITEM SEPARATOR
+        MENUITEM "&Печать...\tCtrl+P",          ID_FILE_PRINT
+        MENUITEM "Пред&варительный просмотр",   ID_FILE_PRINT_PREVIEW
+        MENUITEM "Нас&тройка печати...",        ID_FILE_PRINT_SETUP
+        MENUITEM SEPARATOR
+        MENUITEM "Последний файл",              ID_FILE_MRU_FILE1, GRAYED
+        MENUITEM SEPARATOR
+        MENUITEM "В&ыход",                      ID_APP_EXIT
+    END
+    POPUP "&Правка"
+    BEGIN
+        MENUITEM "&Отменить\tCtrl+Z",           ID_EDIT_UNDO
+        MENUITEM SEPARATOR
+        MENUITEM "&Вырезать\tCtrl+X",           ID_EDIT_CUT
+        MENUITEM "&Копировать\tCtrl+C",         ID_EDIT_COPY
+        MENUITEM "Вст&авить\tCtrl+V",           ID_EDIT_PASTE
+    END
+    POPUP "&Вид"
+    BEGIN
+        MENUITEM "&Панель инструментов",        ID_VIEW_TOOLBAR
+        MENUITEM "&Строка состояния",           ID_VIEW_STATUS_BAR
+        MENUITEM "111",                         ID_LOAD
+        MENUITEM "222",                         ID_HIDE
+    END
+    POPUP "&Справка"
+    BEGIN
+        MENUITEM "&О проекте AssemblyConfig...", ID_APP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Accelerator
+//
+
+IDR_MAINFRAME ACCELERATORS
+BEGIN
+    "N",            ID_FILE_NEW,            VIRTKEY, CONTROL
+    "O",            ID_FILE_OPEN,           VIRTKEY, CONTROL
+    "S",            ID_FILE_SAVE,           VIRTKEY, CONTROL
+    "P",            ID_FILE_PRINT,          VIRTKEY, CONTROL
+    "Z",            ID_EDIT_UNDO,           VIRTKEY, CONTROL
+    "X",            ID_EDIT_CUT,            VIRTKEY, CONTROL
+    "C",            ID_EDIT_COPY,           VIRTKEY, CONTROL
+    "V",            ID_EDIT_PASTE,          VIRTKEY, CONTROL
+    VK_BACK,        ID_EDIT_UNDO,           VIRTKEY, ALT
+    VK_DELETE,      ID_EDIT_CUT,            VIRTKEY, SHIFT
+    VK_INSERT,      ID_EDIT_COPY,           VIRTKEY, CONTROL
+    VK_INSERT,      ID_EDIT_PASTE,          VIRTKEY, SHIFT
+    VK_F6,          ID_NEXT_PANE,           VIRTKEY 
+    VK_F6,          ID_PREV_PANE,           VIRTKEY, SHIFT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX DIALOGEX 0, 0, 170, 62
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "О проекте AssemblyConfig"
+FONT 8, "MS Shell Dlg", 0, 0, 0x1
+BEGIN
+    ICON            IDR_MAINFRAME,IDC_STATIC,14,14,21,20
+    LTEXT           "AssemblyConfig, версия 1.0",IDC_STATIC,42,14,114,8,SS_NOPREFIX
+    LTEXT           "Copyright (C) 2017",IDC_STATIC,42,26,114,8
+    DEFPUSHBUTTON   "ОК",IDOK,113,41,50,14,WS_GROUP
+END
+
+IDD_VAL1 DIALOGEX 0, 0, 587, 271
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Вал 1"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "ОК",IDOK,0,257,50,14
+    PUSHBUTTON      "Отмена",IDCANCEL,91,257,50,14
+    EDITTEXT        IDC_EDIT1,97,84,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT2,97,100,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT3,97,116,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT4,97,132,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT5,97,148,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT6,97,165,40,14,ES_AUTOHSCROLL
+    LTEXT           "Диаметр подшипника",IDC_STATIC,17,85,74,8
+    LTEXT           "Диаметр основания",IDC_STATIC,17,102,68,8
+    LTEXT           "Диаметр колеса",IDC_STATIC,18,118,56,8
+    LTEXT           "Ширина подшипника",IDC_STATIC,18,134,72,8
+    LTEXT           "Ширина колеса",IDC_STATIC,18,151,53,8
+    LTEXT           "Ширина основания",IDC_STATIC,18,167,65,8
+    CONTROL         IDB_BITMAP4,IDC_STATIC,"Static",SS_BITMAP,151,42,407,177
+END
+
+IDD_VAL2 DIALOGEX 0, 0, 609, 247
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+CAPTION "Вал 2"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "ОК",IDOK,0,233,50,14
+    PUSHBUTTON      "Отмена",IDCANCEL,109,233,50,14
+    EDITTEXT        IDC_EDIT1,123,76,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT2,123,94,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT3,123,111,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT4,123,128,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT5,123,145,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT6,123,163,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT7,123,181,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Диаметр шестеренки",IDC_STATIC,17,79,73,8
+    LTEXT           "Диаметр подшипника",IDC_STATIC,17,95,74,8
+    LTEXT           "Диаметр основания",IDC_STATIC,17,112,68,8
+    LTEXT           "Ширина участка подшипника",IDC_STATIC,17,129,101,8
+    LTEXT           "Ширина основания",IDC_STATIC,17,146,65,8
+    LTEXT           "Ширина подшипника",IDC_STATIC,17,163,72,8
+    CONTROL         IDB_BITMAP5,IDC_STATIC,"Static",SS_BITMAP,175,39,407,177
+    LTEXT           "Ширина шестеренки (задается шириной колеса)",IDC_STATIC,17,180,91,25
+END
+
+IDD_POD1 DIALOGEX 0, 0, 553, 377
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Подшипник 1"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "ОК",IDOK,0,363,50,14
+    PUSHBUTTON      "Отмена",IDCANCEL,77,363,50,14
+    EDITTEXT        IDC_EDIT1,82,141,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT2,82,177,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_EDIT3,82,159,40,14,ES_AUTOHSCROLL
+    LTEXT           "Внешний диаметр",IDC_STATIC,5,143,61,8
+    LTEXT           "Кол-во шариков",IDC_STATIC,5,178,55,8
+    LTEXT           "Диаметр шарика",IDC_STATIC,5,160,58,8
+    CONTROL         IDB_BITMAP2,IDC_STATIC,"Static",SS_BITMAP,129,0,424,377
+    LTEXT           "Задается валом:",IDC_STATIC,7,190,58,8
+    EDITTEXT        IDC_EDIT5,81,200,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_EDIT6,81,218,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Внутренний диаметр",IDC_STATIC,7,203,73,11
+    LTEXT           "Ширина",IDC_STATIC,8,220,28,8
+END
+
+IDD_POD2 DIALOGEX 0, 0, 555, 379
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Подшипник 2"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "ОК",IDOK,0,365,50,14
+    PUSHBUTTON      "Отмена",IDCANCEL,77,365,50,14
+    EDITTEXT        IDC_EDIT1,82,129,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT2,82,167,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_EDIT3,82,147,40,14,ES_AUTOHSCROLL
+    LTEXT           "Внешний диаметр",IDC_STATIC,7,132,61,8
+    LTEXT           "Кол-во шариков",IDC_STATIC,8,168,55,8
+    LTEXT           "Диаметр шарика",IDC_STATIC,7,149,58,8
+    CONTROL         IDB_BITMAP2,IDC_STATIC,"Static",SS_BITMAP,130,1,424,377
+    LTEXT           "Задается валом:",IDC_STATIC,7,182,58,8
+    EDITTEXT        IDC_EDIT5,82,192,39,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_EDIT6,82,210,39,14,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Внутренний диаметр",IDC_STATIC,7,195,73,11
+    LTEXT           "Ширина",IDC_STATIC,8,211,28,8
+END
+
+IDD_SHEST DIALOGEX 0, 0, 575, 364
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Шестеренка"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "ОК",IDOK,0,350,50,14
+    PUSHBUTTON      "Отмена",IDCANCEL,98,350,50,14
+    EDITTEXT        IDC_EDIT1,103,131,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_EDIT2,103,114,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT3,103,194,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_EDIT4,103,212,40,14,ES_AUTOHSCROLL
+    LTEXT           "Внешний нижний диаметр",IDC_STATIC,8,133,88,8
+    LTEXT           "Высота зуба (задается высотой зуба колеса)",IDC_STATIC,9,195,83,16
+    LTEXT           "Кол-во зубьев",IDC_STATIC,10,215,50,8
+    LTEXT           "Внешний верхний диаметр",IDC_STATIC,7,116,91,8
+    CONTROL         IDB_BITMAP3,IDC_STATIC,"Static",SS_BITMAP,151,0,424,377
+    LTEXT           "Задается валом:",IDC_STATIC,8,147,58,8
+    EDITTEXT        IDC_EDIT5,103,156,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_EDIT6,103,173,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Внутренний диаметр",IDC_STATIC,25,158,73,11
+    LTEXT           "Ширина",IDC_STATIC,26,175,28,8
+END
+
+IDD_KOL DIALOGEX 0, 0, 565, 362
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Колесо"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "ОК",IDOK,2,348,50,14
+    PUSHBUTTON      "Отмена",IDCANCEL,97,348,50,14
+    EDITTEXT        IDC_EDIT1,109,112,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT2,109,150,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_EDIT3,109,131,40,14,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT4,109,169,40,14,ES_AUTOHSCROLL
+    LTEXT           "Внешний нижний диаметр",IDC_STATIC,8,114,88,8
+    LTEXT           "Высота зуба",IDC_STATIC,8,134,55,8
+    LTEXT           "Кол-во зубьев",IDC_STATIC,8,173,50,8
+    LTEXT           "Внешний верхний диаметр",IDC_STATIC,8,152,91,8
+    CONTROL         IDB_BITMAP1,IDC_STATIC,"Static",SS_BITMAP,156,0,409,362
+    LTEXT           "Задается валом:",IDC_STATIC,9,188,58,8
+    EDITTEXT        IDC_EDIT5,110,197,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    EDITTEXT        IDC_EDIT6,110,214,40,14,ES_AUTOHSCROLL | WS_DISABLED
+    LTEXT           "Внутренний диаметр",IDC_STATIC,26,199,73,11
+    LTEXT           "Ширина",IDC_STATIC,27,216,28,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "041904B0"
+        BEGIN
+            VALUE "CompanyName", "TODO: <Название организации>"
+            VALUE "FileDescription", "AssemblyConfig"
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "AssemblyConfig.exe"
+            VALUE "LegalCopyright", "TODO: (c) <Название организации>.  Все права защищены."
+            VALUE "OriginalFilename", "AssemblyConfig.exe"
+            VALUE "ProductName", "TODO: <Название продукта>"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x419, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUTBOX, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 163
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 55
+    END
+
+    IDD_VAL1, DIALOG
+    BEGIN
+        RIGHTMARGIN, 505
+    END
+
+    IDD_VAL2, DIALOG
+    BEGIN
+        RIGHTMARGIN, 601
+        TOPMARGIN, 7
+    END
+
+    IDD_POD1, DIALOG
+    BEGIN
+    END
+
+    IDD_POD2, DIALOG
+    BEGIN
+        RIGHTMARGIN, 505
+        BOTTOMMARGIN, 274
+    END
+
+    IDD_SHEST, DIALOG
+    BEGIN
+        RIGHTMARGIN, 549
+        BOTTOMMARGIN, 362
+    END
+
+    IDD_KOL, DIALOG
+    BEGIN
+        RIGHTMARGIN, 557
+        VERTGUIDE, 2
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_VAL1 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_VAL2 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_POD1 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_POD2 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_KOL AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_SHEST AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDP_OLE_INIT_FAILED     "Не удалось выполнить инициализацию OLE.  Убедитесь в том, что используются правильные версии библиотек OLE."
+END
+
+STRINGTABLE
+BEGIN
+    IDR_MAINFRAME           "AssemblyConfig\n\nAssemblyConfig\nAssemblyConfig Files (*.acfg)\n.acfg\nAssemblyConfig.Document\nAssemblyConfig.Document"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_APP_TITLE       "AssemblyConfig"
+    AFX_IDS_IDLEMESSAGE     "Готово"
+END
+
+STRINGTABLE
+BEGIN
+    ID_INDICATOR_EXT        "EXT"
+    ID_INDICATOR_CAPS       "CAP"
+    ID_INDICATOR_NUM        "NUM"
+    ID_INDICATOR_SCRL       "SCRL"
+    ID_INDICATOR_OVR        "OVR"
+    ID_INDICATOR_REC        "REC"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_NEW             "Создание нового документа\nСоздать"
+    ID_FILE_OPEN            "Открытие существующего документа\nОткрыть"
+    ID_FILE_CLOSE           "Закрытие активного документа\nЗакрыть"
+    ID_FILE_SAVE            "Сохранение активного документа\nСохранить"
+    ID_FILE_SAVE_AS         "Сохранение активного документа под новым именем\nСохранить как"
+    ID_FILE_PAGE_SETUP      "Изменение параметров печати\nПараметры страницы"
+    ID_FILE_PRINT_SETUP     "Изменение принтера и параметров печати\nНастройка печати"
+    ID_FILE_PRINT           "Печать активного документа\nПечать"
+    ID_FILE_PRINT_DIRECT    "Печать активного документа с использованием текущих параметров\nБыстрая печать"
+    ID_FILE_PRINT_PREVIEW   "Просмотр документа в полностраничном режиме\nПредварительный просмотр"
+END
+
+STRINGTABLE
+BEGIN
+    ID_APP_ABOUT            "Вывод сведений о программе, ее версии и авторских правах\nО программе"
+    ID_APP_EXIT             "Завершение работы приложения с запросом на сохранение документов\nВыход"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_MRU_FILE1       "Открытие данного документа"
+    ID_FILE_MRU_FILE2       "Открытие данного документа"
+    ID_FILE_MRU_FILE3       "Открытие данного документа"
+    ID_FILE_MRU_FILE4       "Открытие данного документа"
+    ID_FILE_MRU_FILE5       "Открытие данного документа"
+    ID_FILE_MRU_FILE6       "Открытие данного документа"
+    ID_FILE_MRU_FILE7       "Открытие данного документа"
+    ID_FILE_MRU_FILE8       "Открытие данного документа"
+    ID_FILE_MRU_FILE9       "Открытие данного документа"
+    ID_FILE_MRU_FILE10      "Открытие данного документа"
+    ID_FILE_MRU_FILE11      "Открытие данного документа"
+    ID_FILE_MRU_FILE12      "Открытие данного документа"
+    ID_FILE_MRU_FILE13      "Открытие данного документа"
+    ID_FILE_MRU_FILE14      "Открытие данного документа"
+    ID_FILE_MRU_FILE15      "Открытие данного документа"
+    ID_FILE_MRU_FILE16      "Открытие данного документа"
+END
+
+STRINGTABLE
+BEGIN
+    ID_NEXT_PANE            "Переход к следующей области окна\nСледующая область"
+    ID_PREV_PANE            "Возврат к предыдущей области окна\nПредыдущая область"
+END
+
+STRINGTABLE
+BEGIN
+    ID_WINDOW_SPLIT         "Разделение активного окна на области\nРазделить"
+END
+
+STRINGTABLE
+BEGIN
+    ID_EDIT_CLEAR           "Удаление выделенного фрагмента\nУдалить"
+    ID_EDIT_CLEAR_ALL       "Полное удаление содержимого документа\nУдалить все"
+    ID_EDIT_COPY            "Копирование выделенного фрагмента в буфер обмена\nКопировать"
+    ID_EDIT_CUT             "Удаление выделенного фрагмента в буфер обмена\nВырезать"
+    ID_EDIT_FIND            "Поиск указанного текста\nНайти"
+    ID_EDIT_PASTE           "Вставка содержимого буфера обмена\nВставить"
+    ID_EDIT_REPEAT          "Повторение последнего действия\nПовторить"
+    ID_EDIT_REPLACE         "Замена заданного текста другим текстом\nЗаменить"
+    ID_EDIT_SELECT_ALL      "Выделение всего документа\nВыделить все"
+    ID_EDIT_UNDO            "Отмена последнего действия\nОтменить"
+    ID_EDIT_REDO            "Повторное выполнение последнего отмененного действия\nВернуть"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_TOOLBAR         "Отображение или скрытие панели инструментов\nПанель инструментов"
+    ID_VIEW_STATUS_BAR      "Показать или скрыть строку состояния\n Переключение строки состояния"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_SCSIZE          "Изменение размера окна"
+    AFX_IDS_SCMOVE          "Изменение положения окна"
+    AFX_IDS_SCMINIMIZE      "Свертывание окна в значок"
+    AFX_IDS_SCMAXIMIZE      "Развертывание окна до полного размера"
+    AFX_IDS_SCNEXTWINDOW    "Переход к следующему окну документа"
+    AFX_IDS_SCPREVWINDOW    "Переход к предыдущему окну документа"
+    AFX_IDS_SCCLOSE         "Закрытие активного окна с запросом на сохранение документов"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_SCRESTORE       "Восстановление исходных размеров окна"
+    AFX_IDS_SCTASKLIST      "Переход к списку задач"
+END
+
+STRINGTABLE
+BEGIN
+    AFX_IDS_PREVIEW_CLOSE   "Выход из режима предварительного просмотра\nОтменить просмотр"
+END
+
+#endif    // Русский (Россия) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+#define _AFX_NO_OLE_RESOURCES
+#define _AFX_NO_TRACKER_RESOURCES
+#define _AFX_NO_PROPERTY_RESOURCES
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_RUS)
+LANGUAGE 25, 1
+#include "res\AssemblyConfig.rc2"  // ресурсы, не редактируемые в Microsoft Visual C++
+#include "l.RUS\afxres.rc"      // Стандартные компоненты
+#include "l.RUS\afxprint.rc"    // ресурсы для печати/предварительного просмотра
+#endif
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

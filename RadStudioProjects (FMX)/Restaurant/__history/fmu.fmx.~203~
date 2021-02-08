@@ -1,0 +1,1104 @@
+object fm: Tfm
+  Left = 608
+  Top = 128
+  Caption = 'fm'
+  ClientHeight = 740
+  ClientWidth = 853
+  Position = Designed
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnClose = FormClose
+  OnShow = FormShow
+  Left = 608
+  Top = 128
+  DesignerMasterStyle = 0
+  object tbGeneral: TTabControl
+    Align = Client
+    Size.Width = 853.000000000000000000
+    Size.Height = 740.000000000000000000
+    Size.PlatformDefault = False
+    TabIndex = 2
+    TabOrder = 4
+    TabPosition = PlatformDefault
+    Sizes = (
+      853s
+      714s
+      853s
+      714s
+      853s
+      714s
+      853s
+      714s
+      853s
+      714s)
+    object tbMenu: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 62.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'tbMenu'
+      ExplicitSize.cx = 62.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object tb: TTabControl
+        Align = Client
+        Size.Width = 853.000000000000000000
+        Size.Height = 714.000000000000000000
+        Size.PlatformDefault = False
+        TabIndex = 0
+        TabOrder = 0
+        TabPosition = PlatformDefault
+        Sizes = (
+          853s
+          688s
+          853s
+          688s)
+        object TabItem1: TTabItem
+          CustomIcon = <
+            item
+            end>
+          IsSelected = True
+          Size.Width = 69.000000000000000000
+          Size.Height = 26.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = ''
+          TabOrder = 0
+          Text = 'TabItem1'
+          ExplicitSize.cx = 69.000000000000000000
+          ExplicitSize.cy = 26.000000000000000000
+          object gridmenu: TGrid
+            CanFocus = True
+            ClipChildren = True
+            Position.X = 168.000000000000000000
+            Position.Y = 101.000000000000000000
+            Size.Width = 265.000000000000000000
+            Size.Height = 380.000000000000000000
+            Size.PlatformDefault = False
+            StyleLookup = 'gridmenuStyle1'
+            TabOrder = 0
+            RowCount = 0
+            Options = [AlternatingRowBackground, ColumnResize, ColumnMove, ColLines, RowLines, RowSelect, Tabs, Header, HeaderClick, AutoDisplacement]
+            Viewport.Width = 261.000000000000000000
+            Viewport.Height = 355.000000000000000000
+          end
+          object btnAppendMenu: TButton
+            Position.X = 496.000000000000000000
+            Position.Y = 104.000000000000000000
+            Size.Width = 145.000000000000000000
+            Size.Height = 57.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 2
+            Text = #1044#1086#1073#1072#1074#1080#1090#1100' '#1073#1083#1102#1076#1086
+            OnClick = btnAppendMenuClick
+          end
+          object btnEditMenu: TButton
+            Position.X = 496.000000000000000000
+            Position.Y = 176.000000000000000000
+            Size.Width = 145.000000000000000000
+            Size.Height = 49.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 1
+            Text = #1048#1079#1084#1077#1085#1080#1090#1100' '#1073#1083#1102#1076#1086
+            OnClick = btnEditMenuClick
+          end
+          object btnDeleteMenu: TButton
+            Position.X = 496.000000000000000000
+            Position.Y = 238.000000000000000000
+            Size.Width = 145.000000000000000000
+            Size.Height = 51.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 3
+            Text = #1059#1076#1072#1083#1080#1090#1100' '#1073#1083#1102#1076#1086
+            OnClick = btnDeleteMenuClick
+          end
+          object btnReturn: TButton
+            Position.X = 592.000000000000000000
+            Position.Y = 534.000000000000000000
+            Size.Width = 176.000000000000000000
+            Size.Height = 51.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 4
+            Text = #1042#1077#1088#1085#1091#1090#1100#1089#1103' '#1074' '#1075#1083#1072#1074#1085#1086#1077' '#1084#1077#1085#1102
+            OnClick = btnReturnClick
+          end
+          object Label19: TLabel
+            Align = Horizontal
+            StyledSettings = [Family, Style, FontColor]
+            Position.Y = 8.000000000000000000
+            Size.Width = 853.000000000000000000
+            Size.Height = 73.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 50.000000000000000000
+            TextSettings.HorzAlign = Center
+            Text = #1052#1077#1085#1102
+            TabOrder = 7
+          end
+        end
+        object TabItem2: TTabItem
+          CustomIcon = <
+            item
+            end>
+          IsSelected = False
+          Size.Width = 69.000000000000000000
+          Size.Height = 26.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = ''
+          TabOrder = 0
+          Text = 'TabItem2'
+          ExplicitSize.cx = 69.000000000000000000
+          ExplicitSize.cy = 26.000000000000000000
+          object edCostMenu: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            TabOrder = 0
+            Position.X = 432.000000000000000000
+            Position.Y = 152.000000000000000000
+          end
+          object edWeightMenu: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            TabOrder = 1
+            Position.X = 432.000000000000000000
+            Position.Y = 120.000000000000000000
+          end
+          object edNameMenu: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            TabOrder = 2
+            Position.X = 432.000000000000000000
+            Position.Y = 88.000000000000000000
+          end
+          object btnSaveMenu: TButton
+            Position.X = 352.000000000000000000
+            Position.Y = 206.000000000000000000
+            Size.Width = 177.000000000000000000
+            Size.Height = 35.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 3
+            Text = #1057#1086#1093#1088#1072#1085#1080#1090#1100
+            OnClick = btnSaveMenuClick
+          end
+          object Label1: TLabel
+            Position.X = 312.000000000000000000
+            Position.Y = 94.000000000000000000
+            Text = #1053#1072#1080#1084#1077#1085#1086#1074#1072#1085#1080#1077
+            TabOrder = 6
+          end
+          object Label4: TLabel
+            Position.X = 312.000000000000000000
+            Position.Y = 158.000000000000000000
+            Text = #1057#1090#1086#1080#1084#1086#1089#1090#1100
+            TabOrder = 5
+          end
+          object Label5: TLabel
+            Position.X = 312.000000000000000000
+            Position.Y = 126.000000000000000000
+            Text = #1042#1077#1089
+            TabOrder = 4
+          end
+          object Label18: TLabel
+            Align = Horizontal
+            StyledSettings = [Family, Style, FontColor]
+            Size.Width = 853.000000000000000000
+            Size.Height = 73.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 50.000000000000000000
+            TextSettings.HorzAlign = Center
+            Text = #1052#1077#1085#1102
+            TabOrder = 7
+          end
+        end
+      end
+    end
+    object tbMenuOrder: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 93.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'tbMenuOrder'
+      ExplicitSize.cx = 93.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object tb2: TTabControl
+        Align = Client
+        Size.Width = 853.000000000000000000
+        Size.Height = 714.000000000000000000
+        Size.PlatformDefault = False
+        TabIndex = 0
+        TabOrder = 0
+        TabPosition = PlatformDefault
+        Sizes = (
+          853s
+          688s)
+        object TabItem3: TTabItem
+          CustomIcon = <
+            item
+            end>
+          IsSelected = True
+          Size.Width = 69.000000000000000000
+          Size.Height = 26.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = ''
+          TabOrder = 0
+          Text = 'TabItem3'
+          ExplicitSize.cx = 69.000000000000000000
+          ExplicitSize.cy = 26.000000000000000000
+          object Grid2: TGrid
+            CanFocus = True
+            ClipChildren = True
+            Position.X = 24.000000000000000000
+            Position.Y = 62.000000000000000000
+            Size.Width = 377.000000000000000000
+            Size.Height = 251.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 0
+            Options = [AlternatingRowBackground, ColumnResize, ColumnMove, ColLines, RowLines, RowSelect, Tabs, Header, HeaderClick, AutoDisplacement]
+            OnSelChanged = Grid2SelChanged
+            Viewport.Width = 357.000000000000000000
+            Viewport.Height = 210.000000000000000000
+          end
+          object Grid3: TGrid
+            CanFocus = True
+            ClipChildren = True
+            Position.X = 552.000000000000000000
+            Position.Y = 58.000000000000000000
+            Size.Width = 281.000000000000000000
+            Size.Height = 607.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 1
+            Options = [AlternatingRowBackground, ColumnResize, ColumnMove, ColLines, RowLines, RowSelect, Tabs, Header, HeaderClick, AutoDisplacement]
+            OnCellDblClick = Grid3CellDblClick
+            Viewport.Width = 261.000000000000000000
+            Viewport.Height = 582.000000000000000000
+          end
+          object Grid4: TGrid
+            CanFocus = True
+            ClipChildren = True
+            Position.X = 56.000000000000000000
+            Position.Y = 368.000000000000000000
+            Size.Width = 257.000000000000000000
+            Size.Height = 297.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 2
+            Options = [AlternatingRowBackground, ColumnResize, ColumnMove, ColLines, RowLines, RowSelect, Tabs, Header, HeaderClick, AutoDisplacement]
+            OnCellDblClick = Grid4CellDblClick
+            Viewport.Width = 237.000000000000000000
+            Viewport.Height = 256.000000000000000000
+          end
+          object Label2: TLabel
+            StyledSettings = [Family, FontColor]
+            Position.X = 24.000000000000000000
+            Position.Y = 8.000000000000000000
+            Size.Width = 377.000000000000000000
+            Size.Height = 49.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 50.000000000000000000
+            TextSettings.HorzAlign = Center
+            Text = #1047#1072#1082#1072#1079#1099':'
+            TabOrder = 5
+          end
+          object Label3: TLabel
+            StyledSettings = [Family, Style, FontColor]
+            Position.X = 32.000000000000000000
+            Position.Y = 312.000000000000000000
+            Size.Width = 313.000000000000000000
+            Size.Height = 49.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 45.000000000000000000
+            TextSettings.HorzAlign = Center
+            Text = #1057#1087#1080#1089#1086#1082' '#1073#1083#1102#1076':'
+            TabOrder = 6
+          end
+          object btnMenuOrderAppend: TButton
+            Position.X = 416.000000000000000000
+            Position.Y = 62.000000000000000000
+            Size.Width = 105.000000000000000000
+            Size.Height = 27.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 8
+            Text = #1044#1086#1073#1072#1074#1080#1090#1100' '#1079#1072#1082#1072#1079
+            OnClick = btnMenuOrderAppendClick
+          end
+          object btnOrderDelete: TButton
+            Position.X = 416.000000000000000000
+            Position.Y = 94.000000000000000000
+            Size.Width = 105.000000000000000000
+            Size.Height = 27.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 7
+            Text = #1059#1076#1072#1083#1080#1090#1100' '#1079#1072#1082#1072#1079
+            OnClick = btnOrderDeleteClick
+          end
+          object Label10: TLabel
+            Position.X = 336.000000000000000000
+            Position.Y = 374.000000000000000000
+            Size.Width = 185.000000000000000000
+            Size.Height = 59.000000000000000000
+            Size.PlatformDefault = False
+            Text = 
+              #1044#1086#1073#1072#1074#1100#1090#1077' '#1073#1083#1102#1076#1086' '#1074' '#1079#1072#1082#1072#1079', '#1085#1072#1078#1072#1074' '#1076#1074#1086#1081#1085#1099#1084' '#1082#1083#1080#1082#1086#1084' '#1087#1086' '#1083#1102#1073#1086#1084#1091' '#1073#1083#1102#1076#1091' '#1080#1079' ' +
+              #1089#1087#1080#1089#1082#1072' '#1073#1083#1102#1076
+            TabOrder = 10
+          end
+          object Label11: TLabel
+            StyledSettings = [Family, FontColor]
+            Position.X = 472.000000000000000000
+            Size.Width = 369.000000000000000000
+            Size.Height = 49.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 50.000000000000000000
+            TextSettings.HorzAlign = Center
+            Text = #1041#1083#1102#1076#1072' '#1074' '#1079#1072#1082#1072#1079#1077':'
+            TabOrder = 3
+          end
+          object Label12: TLabel
+            Position.X = 336.000000000000000000
+            Position.Y = 454.000000000000000000
+            Size.Width = 185.000000000000000000
+            Size.Height = 75.000000000000000000
+            Size.PlatformDefault = False
+            Text = 
+              #1063#1090#1086#1073#1099' '#1091#1076#1072#1083#1080#1090#1100' '#1073#1083#1102#1076#1086' '#1080#1079' '#1079#1072#1082#1072#1079#1072', '#1085#1072#1078#1084#1080#1090#1077' '#1076#1074#1086#1081#1085#1099#1084' '#1082#1083#1080#1082#1086#1084' '#1087#1086' '#1083#1102#1073#1086#1084#1091' ' +
+              #1073#1083#1102#1076#1091' '#1080#1079' '#1089#1087#1080#1089#1082#1072' '#1073#1083#1102#1076#1072' '#1074' '#1079#1072#1082#1072#1079#1077
+            TabOrder = 9
+          end
+          object Button2: TButton
+            Position.X = 368.000000000000000000
+            Position.Y = 614.000000000000000000
+            Size.Width = 176.000000000000000000
+            Size.Height = 51.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 4
+            Text = #1042#1077#1088#1085#1091#1090#1100#1089#1103' '#1074' '#1075#1083#1072#1074#1085#1086#1077' '#1084#1077#1085#1102
+            OnClick = btnReturnClick
+          end
+        end
+      end
+    end
+    object tbAccess: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = True
+      Size.Width = 67.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'tbAccess'
+      ExplicitSize.cx = 55.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object tb3: TTabControl
+        Align = Client
+        Size.Width = 853.000000000000000000
+        Size.Height = 714.000000000000000000
+        Size.PlatformDefault = False
+        TabIndex = 1
+        TabOrder = 0
+        TabPosition = PlatformDefault
+        Sizes = (
+          853s
+          688s
+          853s
+          688s)
+        object TabItem5: TTabItem
+          CustomIcon = <
+            item
+            end>
+          IsSelected = False
+          Size.Width = 69.000000000000000000
+          Size.Height = 26.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = ''
+          TabOrder = 0
+          Text = 'TabItem5'
+          ExplicitSize.cx = 69.000000000000000000
+          ExplicitSize.cy = 26.000000000000000000
+          object btnAppendAccess: TButton
+            Position.X = 536.000000000000000000
+            Position.Y = 62.000000000000000000
+            Size.Width = 168.000000000000000000
+            Size.Height = 51.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 0
+            Text = #1044#1086#1073#1072#1074#1080#1090#1100' '#1089#1086#1090#1088#1091#1076#1085#1080#1082#1072
+            OnClick = btnAppendAccessClick
+          end
+          object Grid1: TGrid
+            CanFocus = True
+            ClipChildren = True
+            Position.X = 16.000000000000000000
+            Position.Y = 62.000000000000000000
+            Size.Width = 489.000000000000000000
+            Size.Height = 451.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 2
+            Options = [AlternatingRowBackground, ColumnResize, ColumnMove, ColLines, RowLines, RowSelect, Tabs, Header, HeaderClick, AutoDisplacement]
+            Viewport.Width = 469.000000000000000000
+            Viewport.Height = 410.000000000000000000
+          end
+          object btnAccessEdit: TButton
+            Position.X = 536.000000000000000000
+            Position.Y = 128.000000000000000000
+            Size.Width = 169.000000000000000000
+            Size.Height = 49.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 1
+            Text = #1048#1079#1084#1077#1085#1080#1090#1100' '#1089#1086#1090#1088#1091#1076#1085#1080#1082#1072
+            OnClick = btnAccessEditClick
+          end
+          object btnAccessDelete: TButton
+            Position.X = 536.000000000000000000
+            Position.Y = 190.000000000000000000
+            Size.Width = 169.000000000000000000
+            Size.Height = 51.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 3
+            Text = #1059#1076#1072#1083#1080#1090#1100' '#1089#1086#1090#1088#1091#1076#1085#1080#1082#1072
+            OnClick = btnAccessDeleteClick
+          end
+          object Button1: TButton
+            Position.X = 536.000000000000000000
+            Position.Y = 422.000000000000000000
+            Size.Width = 176.000000000000000000
+            Size.Height = 51.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 4
+            Text = #1042#1077#1088#1085#1091#1090#1100#1089#1103' '#1074' '#1075#1083#1072#1074#1085#1086#1077' '#1084#1077#1085#1102
+            OnClick = btnReturnClick
+          end
+          object Label17: TLabel
+            Align = Horizontal
+            StyledSettings = [Family, Style, FontColor]
+            Position.Y = -16.000000000000000000
+            Size.Width = 853.000000000000000000
+            Size.Height = 73.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 50.000000000000000000
+            TextSettings.HorzAlign = Center
+            Text = #1057#1086#1090#1088#1091#1076#1085#1080#1082#1080
+            TabOrder = 7
+          end
+        end
+        object TabItem6: TTabItem
+          CustomIcon = <
+            item
+            end>
+          IsSelected = True
+          Size.Width = 69.000000000000000000
+          Size.Height = 26.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = ''
+          TabOrder = 0
+          Text = 'TabItem6'
+          ExplicitSize.cx = 69.000000000000000000
+          ExplicitSize.cy = 26.000000000000000000
+          object Edit1: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            TabOrder = 2
+            Position.X = 432.000000000000000000
+            Position.Y = 104.000000000000000000
+            Size.Width = 150.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+          end
+          object Edit2: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            TabOrder = 1
+            Position.X = 432.000000000000000000
+            Position.Y = 136.000000000000000000
+            Size.Width = 150.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+          end
+          object Label6: TLabel
+            Position.X = 312.000000000000000000
+            Position.Y = 110.000000000000000000
+            Text = #1060#1048#1054
+            TabOrder = 9
+          end
+          object vds: TLabel
+            Position.X = 312.000000000000000000
+            Position.Y = 142.000000000000000000
+            Text = #1051#1086#1075#1080#1085
+            TabOrder = 6
+          end
+          object Label8: TLabel
+            Position.X = 312.000000000000000000
+            Position.Y = 174.000000000000000000
+            Text = #1055#1072#1088#1086#1083#1100
+            TabOrder = 7
+          end
+          object Edit3: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            TabOrder = 0
+            Position.X = 432.000000000000000000
+            Position.Y = 168.000000000000000000
+            Size.Width = 150.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+          end
+          object btnSaveAccess: TButton
+            Position.X = 272.000000000000000000
+            Position.Y = 254.000000000000000000
+            Size.Width = 177.000000000000000000
+            Size.Height = 35.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 4
+            Text = #1057#1086#1093#1088#1072#1085#1080#1090#1100
+            OnClick = btnSaveAccessClick
+          end
+          object Label7: TLabel
+            Position.X = 312.000000000000000000
+            Position.Y = 206.000000000000000000
+            Text = #1059#1088#1086#1074#1077#1085#1100' '#1076#1086#1089#1090#1091#1087#1072
+            TabOrder = 5
+          end
+          object cbAccessRole: TComboBox
+            Position.X = 432.000000000000000000
+            Position.Y = 198.000000000000000000
+            Size.Width = 150.000000000000000000
+            Size.Height = 22.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 10
+          end
+          object Label20: TLabel
+            Align = Horizontal
+            StyledSettings = [Family, Style, FontColor]
+            Size.Width = 853.000000000000000000
+            Size.Height = 73.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 50.000000000000000000
+            TextSettings.HorzAlign = Center
+            Text = #1057#1086#1090#1088#1091#1076#1085#1080#1082#1080
+            TabOrder = 8
+          end
+          object btnReturnAccess: TButton
+            Position.X = 464.000000000000000000
+            Position.Y = 254.000000000000000000
+            Size.Width = 177.000000000000000000
+            Size.Height = 35.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 3
+            Text = #1053#1072#1079#1072#1076
+            OnClick = btnReturnAccessClick
+          end
+        end
+      end
+    end
+    object tbProducts: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 78.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'tbProducts'
+      ExplicitSize.cx = 78.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object tbProd: TTabControl
+        Align = Client
+        Size.Width = 853.000000000000000000
+        Size.Height = 714.000000000000000000
+        Size.PlatformDefault = False
+        TabIndex = 0
+        TabOrder = 1
+        TabPosition = PlatformDefault
+        Sizes = (
+          853s
+          688s
+          853s
+          688s)
+        object TabItem4: TTabItem
+          CustomIcon = <
+            item
+            end>
+          IsSelected = True
+          Size.Width = 69.000000000000000000
+          Size.Height = 26.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = ''
+          TabOrder = 0
+          Text = 'TabItem4'
+          object btnProductsAppend: TButton
+            Position.X = 560.000000000000000000
+            Position.Y = 104.000000000000000000
+            Size.Width = 145.000000000000000000
+            Size.Height = 57.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 0
+            Text = #1044#1086#1073#1072#1074#1080#1090#1100' '#1087#1088#1086#1076#1091#1082#1090
+            OnClick = btnProductsAppendClick
+          end
+          object btnProductsDelete: TButton
+            Position.X = 560.000000000000000000
+            Position.Y = 238.000000000000000000
+            Size.Width = 145.000000000000000000
+            Size.Height = 51.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 1
+            Text = #1059#1076#1072#1083#1080#1090#1100' '#1087#1088#1086#1076#1091#1082#1090
+            OnClick = btnDeleteMenuClick
+          end
+          object btnProductsEdit: TButton
+            Position.X = 560.000000000000000000
+            Position.Y = 176.000000000000000000
+            Size.Width = 145.000000000000000000
+            Size.Height = 49.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 2
+            Text = #1048#1079#1084#1077#1085#1080#1090#1100' '#1087#1088#1086#1076#1091#1082#1090
+            OnClick = btnProductsEditClick
+          end
+          object Button3: TButton
+            Position.X = 552.000000000000000000
+            Position.Y = 502.000000000000000000
+            Size.Width = 176.000000000000000000
+            Size.Height = 51.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 3
+            Text = #1042#1077#1088#1085#1091#1090#1100#1089#1103' '#1074' '#1075#1083#1072#1074#1085#1086#1077' '#1084#1077#1085#1102
+            OnClick = btnReturnClick
+          end
+          object Grid5: TGrid
+            CanFocus = True
+            ClipChildren = True
+            Position.X = 64.000000000000000000
+            Position.Y = 86.000000000000000000
+            Size.Width = 433.000000000000000000
+            Size.Height = 387.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 4
+            Options = [AlternatingRowBackground, ColumnResize, ColumnMove, ColLines, RowLines, Tabs, Header, HeaderClick, AutoDisplacement]
+            Viewport.Width = 413.000000000000000000
+            Viewport.Height = 362.000000000000000000
+          end
+          object Label16: TLabel
+            Align = Horizontal
+            StyledSettings = [Family, Style, FontColor]
+            Position.Y = 8.000000000000000000
+            Size.Width = 853.000000000000000000
+            Size.Height = 73.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 50.000000000000000000
+            TextSettings.HorzAlign = Center
+            Text = #1055#1088#1086#1076#1091#1082#1090#1099
+            TabOrder = 7
+          end
+        end
+        object TabItem7: TTabItem
+          CustomIcon = <
+            item
+            end>
+          IsSelected = False
+          Size.Width = 69.000000000000000000
+          Size.Height = 26.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = ''
+          TabOrder = 0
+          Text = 'TabItem7'
+          object Edit4: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            TabOrder = 2
+            Position.X = 416.000000000000000000
+            Position.Y = 104.000000000000000000
+          end
+          object Label9: TLabel
+            Position.X = 296.000000000000000000
+            Position.Y = 110.000000000000000000
+            Text = #1053#1072#1080#1084#1077#1085#1086#1074#1072#1085#1080#1077
+            TabOrder = 6
+          end
+          object Label13: TLabel
+            Position.X = 296.000000000000000000
+            Position.Y = 142.000000000000000000
+            Text = #1050#1086#1083#1080#1095#1077#1089#1090#1074#1086
+            TabOrder = 4
+          end
+          object Edit5: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            TabOrder = 1
+            Position.X = 416.000000000000000000
+            Position.Y = 136.000000000000000000
+          end
+          object Edit6: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            TabOrder = 0
+            Position.X = 416.000000000000000000
+            Position.Y = 168.000000000000000000
+          end
+          object Label14: TLabel
+            Position.X = 296.000000000000000000
+            Position.Y = 174.000000000000000000
+            Text = #1056#1072#1079#1084#1077#1088#1085#1086#1089#1090#1100
+            TabOrder = 5
+          end
+          object btnProductsSave: TButton
+            Position.X = 336.000000000000000000
+            Position.Y = 222.000000000000000000
+            Size.Width = 177.000000000000000000
+            Size.Height = 35.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 3
+            Text = #1057#1086#1093#1088#1072#1085#1080#1090#1100
+            OnClick = btnProductsSaveClick
+          end
+          object Label15: TLabel
+            Align = Horizontal
+            StyledSettings = [Family, Style, FontColor]
+            Position.Y = 8.000000000000000000
+            Size.Width = 853.000000000000000000
+            Size.Height = 73.000000000000000000
+            Size.PlatformDefault = False
+            TextSettings.Font.Size = 50.000000000000000000
+            TextSettings.HorzAlign = Center
+            Text = #1055#1088#1086#1076#1091#1082#1090#1099
+            TabOrder = 7
+          end
+        end
+      end
+    end
+    object tbMain: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 58.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'tbMain'
+      ExplicitSize.cx = 58.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object btnMainAccess: TButton
+        Align = Center
+        Size.Width = 249.000000000000000000
+        Size.Height = 59.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 4
+        Text = #1040#1076#1084#1080#1085#1080#1089#1090#1088#1080#1088#1086#1074#1072#1085#1080#1077
+        OnClick = btnMainAccessClick
+      end
+      object btnMainOrder: TButton
+        Align = Center
+        Margins.Bottom = 150.000000000000000000
+        Size.Width = 249.000000000000000000
+        Size.Height = 59.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Text = #1052#1077#1085#1102
+        OnClick = btnMainOrderClick
+      end
+      object btnMainMenu: TButton
+        Align = Center
+        Margins.Bottom = 300.000000000000000000
+        Size.Width = 249.000000000000000000
+        Size.Height = 59.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = #1047#1072#1082#1072#1079#1099
+        OnClick = btnMainMenuClick
+      end
+      object btnMainProducts: TButton
+        Align = Center
+        Margins.Top = 150.000000000000000000
+        Size.Width = 249.000000000000000000
+        Size.Height = 59.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        Text = #1055#1088#1086#1076#1091#1082#1090#1099
+        OnClick = btnMainProductsClick
+      end
+      object btnChangeUser: TButton
+        Align = Center
+        Margins.Top = 300.000000000000000000
+        Size.Width = 249.000000000000000000
+        Size.Height = 59.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        Text = #1057#1084#1077#1085#1080#1090#1100' '#1087#1086#1083#1100#1079#1086#1074#1072#1090#1077#1083#1103
+        OnClick = btnChangeUserClick
+      end
+      object Label21: TLabel
+        Align = Horizontal
+        StyledSettings = [Family, Style, FontColor]
+        Position.Y = 40.000000000000000000
+        Size.Width = 853.000000000000000000
+        Size.Height = 73.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 50.000000000000000000
+        TextSettings.HorzAlign = Center
+        Text = #1043#1083#1072#1074#1085#1086#1077' '#1084#1077#1085#1102
+        TabOrder = 7
+      end
+    end
+  end
+  object BindSourceDB1: TBindSourceDB
+    DataSet = dm.Menu
+    ScopeMappings = <>
+    Left = 128
+    Top = 648
+  end
+  object BindingsList1: TBindingsList
+    Methods = <>
+    OutputConverters = <>
+    Left = 212
+    Top = 645
+    object LinkGridToDataSourceBindSourceDB1: TLinkGridToDataSource
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB1
+      GridControl = gridmenu
+      Columns = <
+        item
+          MemberName = 'Name'
+          Header = #1053#1072#1080#1084#1077#1085#1086#1074#1072#1085#1080#1077
+          Width = 100
+        end
+        item
+          MemberName = 'Weight'
+          Header = #1042#1077#1089
+        end
+        item
+          MemberName = 'Cost'
+          Header = #1057#1090#1086#1080#1084#1086#1089#1090#1100
+          Width = 80
+        end>
+    end
+    object LinkControlToField1: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB1
+      FieldName = 'Cost'
+      Control = edCostMenu
+      Track = False
+    end
+    object LinkControlToField2: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB1
+      FieldName = 'Name'
+      Control = edNameMenu
+      Track = False
+    end
+    object LinkControlToField3: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB1
+      FieldName = 'Weight'
+      Control = edWeightMenu
+      Track = False
+    end
+    object LinkGridToDataSourceBindSourceDB32: TLinkGridToDataSource
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB3
+      GridControl = Grid2
+      Columns = <
+        item
+          MemberName = 'Fullname'
+          ReadOnly = True
+          Header = #1057#1086#1090#1088#1091#1076#1085#1080#1082
+          Width = 150
+        end
+        item
+          MemberName = 'Datatime'
+          ReadOnly = True
+          Header = #1044#1072#1090#1072' '#1079#1072#1082#1072#1079#1072
+          Width = 80
+        end
+        item
+          MemberName = 'Time'
+          ReadOnly = True
+          Header = #1042#1088#1077#1084#1103
+          Width = 70
+        end
+        item
+          MemberName = 'NumberTable'
+          Header = #8470' '#1089#1090#1086#1083#1072
+          Width = 55
+        end>
+    end
+    object LinkGridToDataSourceBindSourceDB12: TLinkGridToDataSource
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB1
+      GridControl = Grid4
+      Columns = <
+        item
+          MemberName = 'Name'
+          Header = #1053#1072#1079#1074#1072#1085#1080#1077' '#1073#1083#1102#1076#1072
+          Width = 250
+        end>
+    end
+    object LinkGridToDataSourceBindSourceDB5: TLinkGridToDataSource
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB5
+      GridControl = Grid3
+      Columns = <
+        item
+          MemberName = 'Name'
+          Header = #1053#1072#1079#1074#1072#1085#1080#1077' '#1073#1083#1102#1076#1072
+          Width = 120
+        end
+        item
+          MemberName = 'Amount'
+          Header = #1050#1086#1083'-'#1074#1086
+        end
+        item
+          MemberName = 'Cost'
+          Header = #1062#1077#1085#1072
+        end>
+    end
+    object LinkListControlToField1: TLinkListControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB7
+      FieldName = 'Title'
+      Control = cbAccessRole
+      FillExpressions = <>
+      FillHeaderExpressions = <>
+      FillBreakGroups = <>
+    end
+    object LinkControlToField5: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB6
+      FieldName = 'Login'
+      Control = Edit2
+      Track = False
+    end
+    object LinkControlToField6: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB6
+      FieldName = 'Password'
+      Control = Edit3
+      Track = False
+    end
+    object LinkControlToField4: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB6
+      FieldName = 'FullName'
+      Control = Edit1
+      Track = False
+    end
+    object LinkGridToDataSourceBindSourceDB8: TLinkGridToDataSource
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB8
+      GridControl = Grid1
+      Columns = <
+        item
+          MemberName = 'FullName'
+          Header = #1060#1048#1054
+          Width = 120
+        end
+        item
+          MemberName = 'Login'
+          Header = #1051#1086#1075#1080#1085
+          Width = 120
+        end
+        item
+          MemberName = 'Password'
+          Header = #1055#1072#1088#1086#1083#1100
+          Width = 120
+        end
+        item
+          MemberName = 'Title'
+          Header = #1059#1088#1086#1074#1077#1085#1100' '#1076#1086#1089#1090#1091#1087#1072
+          Width = 120
+        end>
+    end
+    object LinkGridToDataSourceBindSourceDB9: TLinkGridToDataSource
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB9
+      GridControl = Grid5
+      Columns = <
+        item
+          MemberName = 'Name'
+          Header = #1053#1072#1079#1074#1072#1085#1080#1077
+          Width = 120
+        end
+        item
+          MemberName = 'Amount'
+          Header = #1050#1086#1083'-'#1074#1086
+          Width = 70
+        end
+        item
+          MemberName = 'Dimension'
+          Header = #1056#1072#1079#1084#1077#1088#1085#1086#1089#1090#1100
+          Width = 80
+        end>
+    end
+    object LinkControlToField7: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB9
+      FieldName = 'Name'
+      Control = Edit4
+      Track = False
+    end
+    object LinkControlToField8: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB9
+      FieldName = 'Amount'
+      Control = Edit5
+      Track = False
+    end
+    object LinkControlToField9: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB9
+      FieldName = 'Dimension'
+      Control = Edit6
+      Track = False
+    end
+  end
+  object BindSourceDB4: TBindSourceDB
+    ScopeMappings = <>
+    Left = 432
+    Top = 584
+  end
+  object BindSourceDB2: TBindSourceDB
+    DataSet = dm.MenuOrder
+    ScopeMappings = <>
+    Left = 360
+    Top = 584
+  end
+  object BindSourceDB3: TBindSourceDB
+    DataSet = dm.Orders
+    ScopeMappings = <>
+    Left = 752
+    Top = 608
+  end
+  object BindSourceDB5: TBindSourceDB
+    DataSet = dm.orderSql
+    ScopeMappings = <>
+    Left = 360
+    Top = 536
+  end
+  object BindSourceDB6: TBindSourceDB
+    DataSet = dm.Access
+    ScopeMappings = <>
+    Left = 440
+    Top = 352
+  end
+  object BindSourceDB7: TBindSourceDB
+    DataSet = dm.Role
+    ScopeMappings = <>
+    Left = 448
+    Top = 360
+  end
+  object BindSourceDB8: TBindSourceDB
+    DataSet = dm.AccessSql
+    ScopeMappings = <>
+    Left = 416
+    Top = 352
+  end
+  object BindSourceDB9: TBindSourceDB
+    DataSet = dm.Products
+    ScopeMappings = <>
+    Left = 424
+    Top = 360
+  end
+end

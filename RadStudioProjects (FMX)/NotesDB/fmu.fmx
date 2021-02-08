@@ -1,0 +1,271 @@
+object fm: Tfm
+  Left = 0
+  Top = 0
+  Caption = #1047#1072#1084#1077#1090#1082#1080
+  ClientHeight = 723
+  ClientWidth = 425
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnShow = FormShow
+  DesignerMasterStyle = 3
+  object ToolBar1: TToolBar
+    Size.Width = 425.000000000000000000
+    Size.Height = 48.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object Label1: TLabel
+      Align = HorzCenter
+      StyledSettings = [Family, FontColor]
+      Position.X = 94.000000000000000000
+      Size.Width = 236.000000000000000000
+      Size.Height = 48.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 30.000000000000000000
+      TextSettings.Font.StyleExt = {00070000000000000004000000}
+      TextSettings.HorzAlign = Center
+      Text = #1052#1086#1080' '#1079#1072#1084#1077#1090#1082#1080
+      TabOrder = 0
+    end
+  end
+  object tc: TTabControl
+    Align = Client
+    Size.Width = 425.000000000000000000
+    Size.Height = 675.000000000000000000
+    Size.PlatformDefault = False
+    TabHeight = 49.000000000000000000
+    TabIndex = 1
+    TabOrder = 1
+    TabPosition = PlatformDefault
+    Sizes = (
+      425s
+      626s
+      425s
+      626s)
+    object tilist: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 212.000000000000000000
+      Size.Height = 49.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'tilist'
+      object ToolBar3: TToolBar
+        Align = Bottom
+        Position.Y = 578.000000000000000000
+        Size.Width = 425.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object buAdd: TButton
+          Align = MostLeft
+          StyledSettings = [Family, Style, FontColor]
+          Size.Width = 153.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          Text = #1044#1086#1073#1072#1074#1080#1090#1100
+          TextSettings.Font.Size = 20.000000000000000000
+          OnClick = buAddClick
+        end
+      end
+      object lvItem: TListView
+        ItemAppearanceClassName = 'TListItemAppearance'
+        ItemEditAppearanceClassName = 'TListItemShowCheckAppearance'
+        HeaderAppearanceClassName = 'TListHeaderObjects'
+        FooterAppearanceClassName = 'TListHeaderObjects'
+        Align = Client
+        Size.Width = 425.000000000000000000
+        Size.Height = 578.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        OnClick = lvItemClick
+      end
+    end
+    object tiItem: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = True
+      Size.Width = 213.000000000000000000
+      Size.Height = 49.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'tiItem'
+      object ToolBar2: TToolBar
+        Align = Bottom
+        Position.Y = 578.000000000000000000
+        Size.Width = 425.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object buSave: TButton
+          Align = MostLeft
+          Size.Width = 121.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          Text = #1057#1086#1093#1088#1072#1085#1080#1090#1100
+          OnClick = buSaveClick
+        end
+        object buCancel: TButton
+          Align = MostLeft
+          Position.X = 121.000000000000000000
+          Size.Width = 120.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 1
+          Text = #1054#1090#1084#1077#1085#1080#1090#1100
+          OnClick = buCancelClick
+        end
+        object buDel: TButton
+          Align = MostRight
+          Position.X = 296.000000000000000000
+          Size.Width = 129.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 2
+          Text = #1059#1076#1072#1083#1080#1090#1100
+          OnClick = buDelClick
+        end
+      end
+      object Layout1: TLayout
+        Align = Client
+        Padding.Left = 10.000000000000000000
+        Padding.Top = 10.000000000000000000
+        Padding.Right = 10.000000000000000000
+        Padding.Bottom = 20.000000000000000000
+        Size.Width = 425.000000000000000000
+        Size.Height = 578.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        object Label2: TLabel
+          Align = Top
+          StyledSettings = [Family, FontColor]
+          Margins.Top = 10.000000000000000000
+          Position.X = 10.000000000000000000
+          Position.Y = 20.000000000000000000
+          Size.Width = 405.000000000000000000
+          Size.Height = 29.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 20.000000000000000000
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          Text = #1053#1072#1079#1074#1072#1085#1080#1077':'
+          TabOrder = 2
+        end
+        object Label3: TLabel
+          Align = Top
+          StyledSettings = [Family, FontColor]
+          Margins.Top = 10.000000000000000000
+          Position.X = 10.000000000000000000
+          Position.Y = 162.000000000000000000
+          Size.Width = 405.000000000000000000
+          Size.Height = 29.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 20.000000000000000000
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          Text = #1058#1077#1082#1089#1090':'
+          TabOrder = 1
+        end
+        object Label4: TLabel
+          Align = Top
+          StyledSettings = [Family, FontColor]
+          Margins.Top = 10.000000000000000000
+          Position.X = 10.000000000000000000
+          Position.Y = 91.000000000000000000
+          Size.Width = 405.000000000000000000
+          Size.Height = 29.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 20.000000000000000000
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          Text = #1055#1088#1080#1086#1088#1080#1090#1077#1090':'
+          TabOrder = 0
+        end
+        object edCaption: TEdit
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          Align = Top
+          TabOrder = 3
+          Position.X = 10.000000000000000000
+          Position.Y = 49.000000000000000000
+          Size.Width = 405.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+        end
+        object trPriority: TTrackBar
+          Align = Top
+          CanParentFocus = True
+          Frequency = 1.000000000000000000
+          Max = 10.000000000000000000
+          Min = 1.000000000000000000
+          Orientation = Horizontal
+          Position.X = 10.000000000000000000
+          Position.Y = 120.000000000000000000
+          Size.Width = 405.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 4
+          Value = 1.000000000000000000
+        end
+        object meDetail: TMemo
+          Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+          DataDetectorTypes = []
+          Align = Client
+          Margins.Top = 5.000000000000000000
+          Size.Width = 405.000000000000000000
+          Size.Height = 362.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 5
+          Viewport.Width = 397.000000000000000000
+          Viewport.Height = 354.000000000000000000
+        end
+      end
+    end
+  end
+  object BindSourceDB1: TBindSourceDB
+    DataSet = dm.taNotes
+    ScopeMappings = <>
+    Left = 376
+    Top = 8
+  end
+  object BindingsList1: TBindingsList
+    Methods = <>
+    OutputConverters = <>
+    Left = 324
+    Top = 13
+    object LinkListControlToField1: TLinkListControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB1
+      FieldName = 'Caption'
+      Control = lvItem
+      FillExpressions = <>
+      FillHeaderExpressions = <>
+      FillBreakGroups = <>
+    end
+    object LinkControlToField1: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB1
+      FieldName = 'Caption'
+      Control = edCaption
+      Track = False
+    end
+    object LinkControlToField2: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB1
+      FieldName = 'Detail'
+      Control = meDetail
+      Track = False
+    end
+    object LinkControlToField3: TLinkControlToField
+      Category = 'Quick Bindings'
+      DataSource = BindSourceDB1
+      FieldName = 'Priority'
+      Control = trPriority
+      Track = False
+    end
+  end
+end

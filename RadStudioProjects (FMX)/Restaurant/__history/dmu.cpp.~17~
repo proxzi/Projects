@@ -1,0 +1,44 @@
+//---------------------------------------------------------------------------
+
+
+#pragma hdrstop
+
+#include "dmu.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma classgroup "FMX.Controls.TControl"
+#pragma resource "*.dfm"
+Tdm *dm;
+//---------------------------------------------------------------------------
+__fastcall Tdm::Tdm(TComponent* Owner)
+	: TDataModule(Owner)
+{
+}
+//---------------------------------------------------------------------------
+void Tdm::Connect() {
+
+	Connection->Connected = true;
+
+}
+
+void __fastcall Tdm::ConnectionBeforeConnect(TObject *Sender)
+{
+	Connection->Params->Values["Database"] =
+	#if _DEBUG
+						"..\\..\\OTK.db";
+	#else
+						"OTK.db";
+	#endif
+}
+//---------------------------------------------------------------------------
+void __fastcall Tdm::ConnectionAfterConnect(TObject *Sender)
+{
+	Menu->Open();
+	Orders->Open();
+	Staff->Open();
+	MenuOrder->Open();
+	orderSql->Open();
+
+}
+//---------------------------------------------------------------------------
+

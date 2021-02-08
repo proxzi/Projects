@@ -1,0 +1,267 @@
+object dm: Tdm
+  OldCreateOrder = False
+  Height = 335
+  Width = 443
+  object Connection: TFDConnection
+    Params.Strings = (
+      
+        'Database=C:\Users\'#1044#1080#1084#1072#1089'\Documents\Embarcadero\Studio\Projects\re' +
+        'staurant\OTK.db'
+      'DriverID=SQLite')
+    LoginPrompt = False
+    AfterConnect = ConnectionAfterConnect
+    BeforeConnect = ConnectionBeforeConnect
+    Left = 56
+    Top = 40
+  end
+  object Menu: TFDTable
+    IndexFieldNames = 'MenuID'
+    Connection = Connection
+    UpdateOptions.UpdateTableName = 'Menu'
+    TableName = 'Menu'
+    Left = 136
+    Top = 48
+    object MenuMenuID: TFDAutoIncField
+      FieldName = 'MenuID'
+      Origin = 'MenuID'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object MenuName: TStringField
+      FieldName = 'Name'
+      Origin = 'Name'
+      Required = True
+      Size = 60
+    end
+    object MenuWeight: TWideStringField
+      FieldName = 'Weight'
+      Origin = 'Weight'
+      Size = 32767
+    end
+    object MenuCost: TIntegerField
+      FieldName = 'Cost'
+      Origin = 'Cost'
+      Required = True
+    end
+  end
+  object FDGUIxWaitCursor1: TFDGUIxWaitCursor
+    Provider = 'FMX'
+    Left = 144
+    Top = 240
+  end
+  object FDPhysSQLiteDriverLink1: TFDPhysSQLiteDriverLink
+    Left = 64
+    Top = 240
+  end
+  object Access: TFDTable
+    IndexFieldNames = 'AccessID'
+    Connection = Connection
+    UpdateOptions.UpdateTableName = 'Access'
+    TableName = 'Access'
+    Left = 184
+    Top = 56
+    object AccessAccessID: TFDAutoIncField
+      FieldName = 'AccessID'
+      Origin = 'AccessID'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object AccessFullName: TStringField
+      FieldName = 'FullName'
+      Origin = 'FullName'
+      Size = 60
+    end
+    object AccessLogin: TStringField
+      FieldName = 'Login'
+      Origin = 'Login'
+    end
+    object AccessPassword: TStringField
+      FieldName = 'Password'
+      Origin = 'Password'
+    end
+    object AccessRoleID: TStringField
+      FieldName = 'RoleID'
+      Origin = 'RoleID'
+    end
+    object AccessPosition: TStringField
+      FieldName = 'Position'
+      Origin = 'Position'
+      Size = 60
+    end
+  end
+  object Products: TFDTable
+    IndexFieldNames = 'ProductsID'
+    Connection = Connection
+    UpdateOptions.UpdateTableName = 'Products'
+    TableName = 'Products'
+    Left = 280
+    Top = 48
+    object ProductsProductsID: TFDAutoIncField
+      FieldName = 'ProductsID'
+      Origin = 'ProductsID'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object ProductsName: TStringField
+      FieldName = 'Name'
+      Origin = 'Name'
+      Size = 60
+    end
+    object ProductsAmount: TFloatField
+      FieldName = 'Amount'
+      Origin = 'Amount'
+    end
+    object ProductsDimension: TStringField
+      FieldName = 'Dimension'
+      Origin = 'Dimension'
+      Size = 5
+    end
+  end
+  object Role: TFDTable
+    IndexFieldNames = 'RoleID'
+    Connection = Connection
+    UpdateOptions.UpdateTableName = 'Role'
+    TableName = 'Role'
+    Left = 328
+    Top = 64
+    object RoleRoleID: TFDAutoIncField
+      FieldName = 'RoleID'
+      Origin = 'RoleID'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object RoleTitle: TStringField
+      FieldName = 'Title'
+      Origin = 'Title'
+    end
+  end
+  object MenuOrder: TFDTable
+    IndexFieldNames = 'MenuOrderID'
+    Connection = Connection
+    UpdateOptions.UpdateTableName = 'MenuOrder'
+    TableName = 'MenuOrder'
+    Left = 232
+    Top = 56
+    object MenuOrderMenuOrderID: TFDAutoIncField
+      FieldName = 'MenuOrderID'
+      Origin = 'MenuOrderID'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object MenuOrderOrderID: TIntegerField
+      FieldName = 'OrderID'
+      Origin = 'OrderID'
+    end
+    object MenuOrderMenuID: TIntegerField
+      FieldName = 'MenuID'
+      Origin = 'MenuID'
+    end
+    object MenuOrderAmount: TIntegerField
+      FieldName = 'Amount'
+      Origin = 'Amount'
+    end
+  end
+  object Orders: TFDTable
+    IndexFieldNames = 'OrderID'
+    Connection = Connection
+    UpdateOptions.UpdateTableName = 'Orders'
+    TableName = 'Orders'
+    Left = 144
+    Top = 144
+    object OrdersOrderID: TFDAutoIncField
+      FieldName = 'OrderID'
+      Origin = 'OrderID'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+    object OrdersFullname: TStringField
+      FieldName = 'Fullname'
+      Origin = 'Fullname'
+      Size = 60
+    end
+    object OrdersDatatime: TStringField
+      FieldName = 'Datatime'
+      Origin = 'Datatime'
+      Size = 60
+    end
+    object OrdersTime: TStringField
+      FieldName = 'Time'
+      Origin = 'Time'
+      Size = 60
+    end
+    object OrdersNumberTable: TIntegerField
+      FieldName = 'NumberTable'
+      Origin = 'NumberTable'
+    end
+  end
+  object orderSql: TFDQuery
+    Connection = Connection
+    SQL.Strings = (
+      
+        'SELECT MenuOrder.OrderID, Menu.Name, Menu.Cost, MenuOrder.Amount' +
+        ', MenuOrder.MenuOrderID FROM Menu JOIN MenuOrder ON (MenuOrder.M' +
+        'enuID = Menu.MenuID)')
+    Left = 368
+    Top = 232
+    object orderSqlName: TStringField
+      FieldName = 'Name'
+      Origin = 'Name'
+      Required = True
+      Size = 60
+    end
+    object orderSqlCost: TIntegerField
+      FieldName = 'Cost'
+      Origin = 'Cost'
+      Required = True
+    end
+    object orderSqlAmount: TIntegerField
+      FieldName = 'Amount'
+      Origin = 'Amount'
+    end
+    object orderSqlOrderID: TIntegerField
+      FieldName = 'OrderID'
+      Origin = 'OrderID'
+    end
+    object orderSqlMenuOrderID: TFDAutoIncField
+      FieldName = 'MenuOrderID'
+      Origin = 'MenuOrderID'
+      ProviderFlags = [pfInWhere, pfInKey]
+      ReadOnly = True
+    end
+  end
+  object AccessSql: TFDQuery
+    Connection = Connection
+    SQL.Strings = (
+      
+        'SELECT Access.FullName, Access.Login, Access.Password, Role.Titl' +
+        'e, Access.AccessID FROM Access JOIN Role ON (Access.RoleID = Rol' +
+        'e.RoleID)')
+    Left = 304
+    Top = 232
+    object AccessSqlFullName: TStringField
+      FieldName = 'FullName'
+      Origin = 'FullName'
+      Size = 60
+    end
+    object AccessSqlLogin: TStringField
+      FieldName = 'Login'
+      Origin = 'Login'
+    end
+    object AccessSqlPassword: TStringField
+      FieldName = 'Password'
+      Origin = 'Password'
+    end
+    object AccessSqlTitle: TStringField
+      AutoGenerateValue = arDefault
+      FieldName = 'Title'
+      Origin = 'Title'
+      ProviderFlags = []
+      ReadOnly = True
+    end
+    object AccessSqlAccessID: TFDAutoIncField
+      FieldName = 'AccessID'
+      Origin = 'AccessID'
+      ProviderFlags = [pfInWhere, pfInKey]
+    end
+  end
+end

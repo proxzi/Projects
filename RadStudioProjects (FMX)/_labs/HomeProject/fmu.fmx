@@ -1,0 +1,133 @@
+object fm: Tfm
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 484
+  ClientWidth = 642
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 3
+  object render: TTimer
+    Enabled = False
+    Interval = 30
+    OnTimer = renderTimer
+    Left = 32
+    Top = 80
+  end
+  object tc: TTabControl
+    Align = Client
+    Size.Width = 642.000000000000000000
+    Size.Height = 484.000000000000000000
+    Size.PlatformDefault = False
+    TabHeight = 49.000000000000000000
+    TabIndex = 0
+    TabOrder = 1
+    TabPosition = PlatformDefault
+    Sizes = (
+      642s
+      435s
+      642s
+      435s)
+    object start: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = True
+      Size.Width = 321.000000000000000000
+      Size.Height = 49.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'start'
+      object buStart: TButton
+        Align = Center
+        Margins.Top = 100.000000000000000000
+        Size.Width = 289.000000000000000000
+        Size.Height = 71.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = #1053#1072#1095#1072#1090#1100' '#1080#1075#1088#1091
+        OnClick = buStartClick
+      end
+      object Label1: TLabel
+        StyledSettings = [Family, Style, FontColor]
+        Position.X = 168.000000000000000000
+        Position.Y = 47.000000000000000000
+        Size.Width = 337.000000000000000000
+        Size.Height = 114.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.Size = 25.000000000000000000
+        TextSettings.HorzAlign = Center
+        Text = #1042#1099#1073#1077#1088#1080#1090#1077' '#1094#1074#1077#1090' '#1096#1072#1088#1086#1074', '#1082#1086#1090#1086#1088#1099#1077' '#1074#1099' '#1093#1086#1090#1080#1090#1077' '#1083#1086#1087#1072#1090#1100
+        TabOrder = 1
+      end
+      object cb: TComboBox
+        Items.Strings = (
+          #1050#1088#1072#1089#1085#1099#1081
+          #1057#1080#1085#1080#1081
+          #1060#1080#1086#1083#1077#1090#1086#1074#1099#1081)
+        ItemIndex = 0
+        Position.X = 192.000000000000000000
+        Position.Y = 159.000000000000000000
+        Size.Width = 265.000000000000000000
+        Size.Height = 32.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+      end
+    end
+    object game: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 321.000000000000000000
+      Size.Height = 49.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'game'
+      object ly: TLayout
+        Align = Client
+        HitTest = True
+        Size.Width = 642.000000000000000000
+        Size.Height = 435.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object laScore: TLabel
+          StyledSettings = [Family]
+          Position.X = -1.000000000000000000
+          Position.Y = 360.000000000000000000
+          Size.Width = 138.000000000000000000
+          Size.Height = 57.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 30.000000000000000000
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          TextSettings.FontColor = claBrown
+          Text = #1057#1095#1077#1090':  0'
+          TabOrder = 1
+        end
+        object laTime: TLabel
+          StyledSettings = [Family]
+          Position.X = -1.000000000000000000
+          Position.Y = 312.000000000000000000
+          Size.Width = 226.000000000000000000
+          Size.Height = 57.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.Size = 30.000000000000000000
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          TextSettings.FontColor = claBrown
+          Text = #1042#1088#1077#1084#1103':  0'
+          TabOrder = 0
+        end
+      end
+    end
+  end
+  object Time: TTimer
+    Enabled = False
+    OnTimer = TimeTimer
+    Left = 80
+    Top = 81
+  end
+end

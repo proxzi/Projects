@@ -1,0 +1,40 @@
+//---------------------------------------------------------------------------
+
+#ifndef fmuLoginH
+#define fmuLoginH
+//---------------------------------------------------------------------------
+#include <System.Classes.hpp>
+#include <FMX.Controls.hpp>
+#include <FMX.Forms.hpp>
+#include <FMX.Controls.Presentation.hpp>
+#include <FMX.Edit.hpp>
+#include <FMX.Layouts.hpp>
+#include <FMX.StdCtrls.hpp>
+#include <FMX.Types.hpp>
+//---------------------------------------------------------------------------
+class Tfmulog : public TForm
+{
+__published:	// IDE-managed Components
+	TGridPanelLayout *GridPanelLayout1;
+	TLabel *Label1;
+	TEdit *edLogin;
+	TButton *btnEnter;
+	TLabel *Label2;
+	TEdit *edPass;
+	TButton *btnClose;
+	TLabel *lbWarning;
+	void __fastcall btnCloseClick(TObject *Sender);
+	void __fastcall btnEnterClick(TObject *Sender);
+	void __fastcall FormShow(TObject *Sender);
+	void __fastcall btnEnterKeyDown(TObject *Sender, WORD &Key, System::WideChar &KeyChar,
+          TShiftState Shift);
+private:	// User declarations
+public:		// User declarations
+	__fastcall Tfmulog(TComponent* Owner);
+	int level;
+    int AccessID;
+};
+//---------------------------------------------------------------------------
+extern PACKAGE Tfmulog *fmulog;
+//---------------------------------------------------------------------------
+#endif

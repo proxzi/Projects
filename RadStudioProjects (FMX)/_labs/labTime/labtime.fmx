@@ -1,0 +1,64 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 480
+  ClientWidth = 640
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  DesignerMasterStyle = 0
+  object Memo: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Position.X = 32.000000000000000000
+    Position.Y = 288.000000000000000000
+    Size.Width = 137.000000000000000000
+    Size.Height = 185.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Viewport.Width = 133.000000000000000000
+    Viewport.Height = 181.000000000000000000
+  end
+  object Bustart: TButton
+    StyledSettings = [Family, Style, FontColor]
+    Position.X = 216.000000000000000000
+    Position.Y = 224.000000000000000000
+    Size.Width = 80.000000000000000000
+    Size.Height = 49.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Text = #1057#1090#1072#1088#1090
+    TextSettings.Font.Size = 20.000000000000000000
+    OnClick = BustartClick
+  end
+  object Bustop: TButton
+    StyledSettings = [Family, Style, FontColor]
+    Position.X = 312.000000000000000000
+    Position.Y = 224.000000000000000000
+    Size.Width = 81.000000000000000000
+    Size.Height = 49.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    Text = #1055#1072#1091#1079#1072
+    TextSettings.Font.Size = 20.000000000000000000
+    OnClick = BustopClick
+  end
+  object Latime: TLabel
+    StyledSettings = [Family, Style, FontColor]
+    Position.X = 96.000000000000000000
+    Position.Y = 40.000000000000000000
+    Size.Width = 449.000000000000000000
+    Size.Height = 153.000000000000000000
+    Size.PlatformDefault = False
+    TextSettings.Font.Size = 120.000000000000000000
+    TextSettings.HorzAlign = Center
+    Text = '0:00:00'
+    TabOrder = 3
+  end
+  object Tm: TTimer
+    OnTimer = TmTimer
+    Left = 568
+    Top = 320
+  end
+end

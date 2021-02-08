@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{176F0A6B-F97D-49AC-A7E6-027260C3B403}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="labIndyTCP_SRV\labIndyTCP_SRV.cbproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="labIndyTCP_CNT\labIndyTCP_CNT.cbproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="labIndyTCP_SRV">
+        <MSBuild Projects="labIndyTCP_SRV\labIndyTCP_SRV.cbproj"/>
+    </Target>
+    <Target Name="labIndyTCP_SRV:Clean">
+        <MSBuild Projects="labIndyTCP_SRV\labIndyTCP_SRV.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="labIndyTCP_SRV:Make">
+        <MSBuild Projects="labIndyTCP_SRV\labIndyTCP_SRV.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="labIndyTCP_CNT">
+        <MSBuild Projects="labIndyTCP_CNT\labIndyTCP_CNT.cbproj"/>
+    </Target>
+    <Target Name="labIndyTCP_CNT:Clean">
+        <MSBuild Projects="labIndyTCP_CNT\labIndyTCP_CNT.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="labIndyTCP_CNT:Make">
+        <MSBuild Projects="labIndyTCP_CNT\labIndyTCP_CNT.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="labIndyTCP_SRV;labIndyTCP_CNT"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="labIndyTCP_SRV:Clean;labIndyTCP_CNT:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="labIndyTCP_SRV:Make;labIndyTCP_CNT:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

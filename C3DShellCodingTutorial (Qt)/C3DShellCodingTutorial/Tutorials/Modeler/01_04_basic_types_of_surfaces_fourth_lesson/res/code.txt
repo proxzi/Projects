@@ -1,0 +1,1630 @@
+[id = "code_block_1"]
+[begin]
+#include "setup.h"
+#include "surface.h" // MbSurface - родительский класс "Поверхность"
+#include "surf_sphere_surface.h"// MbSphereSurface - класс "Сферическая поверхность"
+#include "point_frame.h" // MbPointFrame - класс - объект геометрической модели "Точечный каркас"
+
+bool run()
+{
+    // Построение сферической поверхности по центру и радиусу
+    MbCartPoint3D center( 0, 0, 0 );
+    double radius = 10;
+    MbSphereSurface* pSphere = new MbSphereSurface( center, radius );
+    
+    // Получение информации о типе геометрического объекта
+    MbeSpaceType type_obj = pSphere->IsA(); // st_SphereSurface
+    // Код группового типа, обозначающий родительский класс
+    MbeSpaceType type_parent = pSphere->Type(); // st_ElementarySurface
+    // Код семейства, обозначающий базовый класс, унаследованный от MbSpaceItem
+    MbeSpaceType type_family = pSphere->Family(); // st_Surface
+    
+    // Получение характеристик области определения параметров u и v
+    // Получение предельных значений параметров поверхности
+    double uMin = pSphere->GetUMin(); // 0.0
+    double uMax = pSphere->GetUMax(); // 6.28
+    double vMin = pSphere->GetVMin(); // -1.57
+    double vMax = pSphere->GetVMax(); // +1.57
+    // Проверка, является ли поверхность замкнутой по параметрам u и v
+    bool bClosedU = pSphere->IsUTouch(); // true
+    bool bClosedV = pSphere->IsVTouch(); // false
+    // Проверка, является ли поверхность периодической.
+    int typePeriod = pSphere->Periodicity(); // 1 - поверхность периодическая по u
+    // Получение значения периода для замкнутой поверхности.
+    double uPeriod = pSphere->GetUPeriod(); // 6.28
+    double vPeriod = pSphere->GetVPeriod(); // 0.0
+    
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSphere);
+    
+    // Вычисление координат точек поверхности, параметры которых с
+    // равным шагом заполняют прямоугольную область допустимых
+    // значений параметров (umin, vmin) - (umax, vmax).
+    // DIV_CNT - количество интервалов по каждому параметру
+    const int DIV_CNT = 15;
+    // Шаг по значениям параметров
+    const double DU = ( uMax - uMin )/DIV_CNT;
+    const double DV = ( vMax - vMin )/DIV_CNT;
+    
+    // Объект "Точечный каркас", в котором сохраняются вычисленные точки
+    // поверхности для последующего отображения.
+    MbPointFrame* pPntsFrame = new MbPointFrame();
+    
+    // Цикл для вычисления параметров точек поверхности
+    for (double u=uMin; u<=uMax; u+=DU)
+        for (double v = vMin; v <=vMax; v += DV)
+        {
+        // Вычисление координат точки с параметрами (u, v)
+        MbCartPoint3D pnt;
+        pSphere->_PointOn( u, v, pnt );
+        // Сохранение координат точки в точечном каркасе.
+        pPntsFrame->AddVertex( pnt );
+        }
+    // Отображение массива точек
+    show( Style( 1, LIGHTRED ), pPntsFrame );
+    
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    
+    ::DeleteItem( pPntsFrame );
+    ::DeleteItem( pSphere );
+    
+    return true;
+}
+[end]
+[id = "code_block_2"]
+[begin]
+#include "setup.h"
+#include "surface.h" // MbSurface - родительский класс "Поверхность"
+#include "surf_sphere_surface.h"// MbSphereSurface - класс "Сферическая поверхность"
+#include "curve3d.h" // MbCurve3D - "Кривая в трехмерном пространстве"
+bool run()
+{
+    // Построение сферической поверхности по центру и радиусу
+    MbCartPoint3D center( 0, 0, 0 );
+    double radius = 10;
+    MbSphereSurface* pSphere = new MbSphereSurface( center, radius );
+    
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSphere);
+    
+    // Получение предельных значений параметров поверхности
+    const double uMin = pSphere->GetUMin(); // 0.0
+    const double uMax = pSphere->GetUMax(); // 6.28
+    const double vMin = pSphere->GetVMin(); // -1.57
+    const double vMax = pSphere->GetVMax(); // +1.57
+    
+    // Построение ULINE_CNT координатных линий при u=Const с равными промежутками
+    // по параметру u между линиями
+    const int ULINE_CNT = 10;
+    const double DU = (uMax - uMin)/ULINE_CNT;
+    MbRect1D rgnV( vMin, vMax );
+    for (int i = 0; i < ULINE_CNT; i++)
+    {
+        double curU = uMin + DU*i;
+        MbCurve3D* pCoordLine = pSphere->CurveV( curU, &rgnV );
+        show( Style( 1, LIGHTRED ), pCoordLine );
+        ::DeleteItem( pCoordLine );
+    }
+    
+    // Построение VLINE_CNT координатных линий при v=Const с равными промежутками по
+    // параметру v между линиями
+    const int VLINE_CNT = 10;
+    const double DV = (vMax - vMin)/VLINE_CNT;
+    MbRect1D rgnU( uMin, uMax );
+    for (int i = 0; i < VLINE_CNT; i++)
+    {
+        double curV = vMin + DV*i;
+        MbCurve3D* pCoordLine = pSphere->CurveU( curV, &rgnU );
+        show( Style( 1, LIGHTBLUE ), pCoordLine );
+        ::DeleteItem( pCoordLine );
+    }
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSphere );
+    return true;
+}
+[end]
+[id = "code_block_3"]
+[begin]
+#include "setup.h"
+#include "surface.h" // MbSurface - родительский класс "Поверхность"
+#include "surf_sphere_surface.h"// MbSphereSurface - класс "Сферическая поверхность"
+#include "point_frame.h" // MbPointFrame - класс - объект геометрической
+// модели "Точечный каркас"
+#include "cur_line_segment3d.h" // MbLineSegment3D - "Трехмерный отрезок"
+
+bool run()
+{
+    // Построение сферической поверхности по центру и радиусу
+    MbCartPoint3D center( 0, 0, 0 );
+    double radius = 10;
+    MbSphereSurface* pSphere = new MbSphereSurface( center, radius );
+    
+    // Получение предельных значений параметров поверхности
+    const double uMin = pSphere->GetUMin(); // 0.0
+    const double uMax = pSphere->GetUMax(); // 6.28
+    const double vMin = pSphere->GetVMin(); // -1.57
+    const double vMax = pSphere->GetVMax(); // +1.57
+
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSphere);
+    // Вычисление координат точек поверхности, параметры которых с
+    // равным шагом заполняют прямоугольную область допустимых
+    // значений параметров (umin, vmin) - (umax, vmax).
+    // DIV_CNT - количество интервалов по каждому параметру
+    const int DIV_CNT = 15;
+    // Шаг по значениям параметров
+    const double DU = ( uMax - uMin )/DIV_CNT;
+    const double DV = ( vMax - vMin )/DIV_CNT;
+    
+    // Объект "Точечный каркас", в котором сохраняются вычисленные точки
+    // поверхности для последующего отображения.
+    MbPointFrame* pPntsFrame = new MbPointFrame();
+    
+    // Цикл для вычисления параметров точек поверхности
+    for (double u=uMin; u<=uMax; u+=DU)
+        for (double v = vMin; v <=vMax; v += DV)
+        {
+            // Вычисление координат точки с параметрами (u, v)
+            MbCartPoint3D pnt;
+            pSphere->_PointOn( u, v, pnt );
+            // Сохранение координат точки в точечном каркасе.
+            pPntsFrame->AddVertex( pnt );
+            // Вычисление в точке pnt касательных векторов вдоль направлений u и v
+            MbVector3D vecTangU, vecTangV;
+            pSphere->_TangentU( u, v, vecTangU );
+            pSphere->_TangentV( u, v, vecTangV );
+            // Отображение касательных векторов в виде отрезков длиной SEG_LEN
+            const double SEG_LEN = 1.0;
+            MbCartPoint3D pU, pV; // Точки - концы отрезков (с началом в точке pnt)
+            pU = pnt + vecTangU*SEG_LEN;
+            pV = pnt + vecTangV*SEG_LEN;
+            MbLineSegment3D* pSegU = new MbLineSegment3D( pnt, pU );
+            MbLineSegment3D* pSegV = new MbLineSegment3D( pnt, pV );
+            show( Style( 1, LIGHTBLUE ), pSegU );
+            show( Style( 1, LIGHTRED ), pSegV );
+            
+            ::DeleteItem( pSegU );
+            ::DeleteItem( pSegV );
+            
+        
+            // Вычисление и отображение вектора нормали в точке pnt (здесь не показано).
+            // Выполняется аналогично действиям для касательных векторов
+            // с использованием метода MbSurface::_Normal.
+            // ...
+        }
+    // Отображение массива точек
+    show( Style( 1, LIGHTRED ), pPntsFrame );
+    
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    
+    ::DeleteItem( pPntsFrame );
+    ::DeleteItem( pSphere );
+    
+    return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"
+#include <mb_axis3d.h>
+#include "surf_sphere_surface.h" // MbSphereSurface – сферическая поверхность
+#include "surf_cylinder_surface.h" // MbCylinderSurface – цилиндрическая поверхность
+#include "surf_cone_surface.h" // MbConeSurface - коническая поверхность"
+
+// Функция для отображения локальной СК _cs в виде набора элементарных поверхностей
+void DrawCoordSystem( const MbPlacement3D& _cs, const double _axesLen )
+{
+    // Центр и оси СК _cs
+    MbCartPoint3D csCnt( _cs.GetOrigin() );
+    // При создании осей в виде объектов MbAxis3D необходимо корректно указывать
+    // не только направление, но и начало оси – иначе повороты вокруг этих
+    // осей будут вычисляться некорректно.
+    MbAxis3D csAxX( csCnt, _cs.GetAxisX() );
+    MbAxis3D csAxY( csCnt, _cs.GetAxisY() );
+    MbAxis3D csAxZ( csCnt, _cs.GetAxisZ() );
+    
+    // Характеристики цилиндрических поверхностей, изображающих оси координат:
+    // - высота цилиндров - _axesLen
+    // - радиус цилиндров - 5% от высоты, но не менее MIN_CYL_RAD
+    double cylHeight = _axesLen;
+    const double MIN_CYL_RAD = 0.5;
+    double cylRadius = std::max<double>( cylHeight*0.05, MIN_CYL_RAD );
+    
+    // Вычисление локальных СК для цилиндров, изображающих
+    // координатные оси: plCylX, plCylY, plCylZ.
+    // Центры СК цилиндров совпадают с центром _cs.
+    // В локальной СК каждого цилиндра ось Z ориентирована вдоль одной из осей _cs,
+    // поэтому plCyZ совпадает с _cs, а plCylX и plCylY вычисляются посредством
+    // поворота _cs вокруг одной из осей на 90 градусов.
+    MbPlacement3D plCylX(_cs), plCylY(_cs), plCylZ(_cs);
+    plCylX.Rotate( csAxY, M_PI/2 );
+    plCylY.Rotate( csAxX, -M_PI/2 );
+    
+    // Цилиндрические поверхности, изображающие оси X, Y и Z системы координат _cs
+    MbCylinderSurface* pCylX = new MbCylinderSurface( plCylX, cylRadius, cylHeight );
+    MbCylinderSurface* pCylY = new MbCylinderSurface( plCylY, cylRadius, cylHeight );
+    MbCylinderSurface* pCylZ = new MbCylinderSurface( plCylZ, cylRadius, cylHeight );
+    
+    // Сферическая поверхность, изображающая начало координат.
+    // Радиус сферы превышает радиус цилиндров, чтобы сферу было видно при отображении.
+    double sphereRadius = cylRadius*2;
+    MbSphereSurface* pSphere = new MbSphereSurface( _cs.GetOrigin(), sphereRadius );
+    
+    // Характеристики конических поверхностей, изображающих стрелки на осях координат:
+    // - радиусы конусов совпадают с радиусом сферы, изображающей начало координат;
+    // - высота конусов - 20% от высоты цилиндров;
+    // - угол между образующей и высотой конуса определяется радиусом и высотой.
+    double coneRadius = sphereRadius;
+    double coneHeight = cylHeight*0.2;
+    double coneAngle = atan( coneRadius/coneHeight );
+    
+    // Вычисление локальных СК конических поверхностей, изображающих
+    // стрелки осей координат: plConeX, plConeY и plConeZ.
+    // Ось конуса в его локальной СК направлена в сторону "-Z", а вершина конуса
+    // располагается в начале этой СК.
+    // Для вычисления локальной СК каждого конуса производятся действия:
+    // 1) СК конуса совмещается с СК цилиндра;
+    // 2) СК поворачивается вокруг своей оси X, чтобы изменить направление
+    // оси Z на противоположное;
+    // 3) СК смещается вдоль оси Z на величину -coneOfs так, чтобы основание
+    // конуса располагалось на "конце оси".
+    MbPlacement3D plConeX = plCylX;
+    double coneOfs = (cylHeight + coneHeight);
+    MbAxis3D cylX_axX(plCylX.GetOrigin(), plCylX.GetAxisX());
+    plConeX.Rotate(cylX_axX, M_PI);
+    plConeX.Move( plConeX.GetAxisZ() * -coneOfs );
+    
+    MbPlacement3D plConeY = plCylY;
+    MbAxis3D cylY_axX(plCylY.GetOrigin(), plCylY.GetAxisX());
+    plConeY.Rotate(cylY_axX, M_PI);
+    plConeY.Move( plConeY.GetAxisZ() * -coneOfs );
+    
+    MbPlacement3D plConeZ = plCylZ;
+    MbAxis3D cylZ_axX(plCylZ.GetOrigin(), plCylZ.GetAxisX());
+    plConeZ.Rotate(cylZ_axX, M_PI);
+    plConeZ.Move( plConeZ.GetAxisZ() * -coneOfs );
+    // При построении конических поверхностей в качестве радиуса указывается 0 - в таком
+    // случае строится конус с вершиной. Если указывается значение радиуса >0 - то
+    // строится поверхность усеченного конуса.
+    MbConeSurface* pConeX = new MbConeSurface( plConeX, 0.0, coneAngle, coneHeight );
+    MbConeSurface* pConeY = new MbConeSurface( plConeY, 0.0, coneAngle, coneHeight );
+    MbConeSurface* pConeZ = new MbConeSurface( plConeZ, 0.0, coneAngle, coneHeight );
+    
+    // Отображение поверхностей
+    show(Style(1, LIGHTRED), pCylX );
+    show(Style(1, LIGHTRED), pConeX );
+    show(Style(1, LIGHTGREEN), pCylY );
+    show(Style(1, LIGHTGREEN), pConeY );
+    show(Style(1, LIGHTBLUE), pCylZ );
+    show(Style(1, LIGHTBLUE), pConeZ );
+    show(Style(1, LIGHTGRAY), pSphere );
+    
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    
+    ::DeleteItem( pCylX );
+    ::DeleteItem( pCylY );
+    ::DeleteItem( pCylZ );
+    ::DeleteItem( pConeX );
+    ::DeleteItem( pConeY );
+    ::DeleteItem( pConeZ );
+    ::DeleteItem( pSphere );
+    
+}
+bool run()
+{
+    // Отображение мировой СК с осями в виде цилиндров длиной 10.0
+    MbPlacement3D pl;
+    DrawCoordSystem( pl, 10.0 );
+    
+    // Локальная СК, смещенная относительно мировой вдоль оси Y
+    MbPlacement3D pl1 = pl;
+    pl1.Move(MbVector3D(0, 15, 0));
+    DrawCoordSystem( pl1, 5.0 );
+    
+    // Локальная СК, полученная преобразованиями относительно мировой СК:
+    // - поворот вокруг Z;
+    // - смещение вдоль оси Z.
+    MbPlacement3D pl2 = pl;
+    MbAxis3D global_axZ( MbCartPoint3D(0,0,0), MbVector3D(0,0,1) );
+    pl2.Rotate( global_axZ, M_PI/4 );
+    pl2.Move(MbVector3D(0, 0, 25));
+    DrawCoordSystem( pl2, 5.0 );
+    
+    // Локальная СК, полученная преобразованиями относительно мировой СК:
+    // - поворот вокруг оси X
+    // - поворот вокруг оси Y
+    // - смещение вдоль направления (1, 1, 1)
+    // Замечание: При отображении этой СК в тестовом приложении в изометрической
+    // проекции может показаться, что СК отображается неправильно и ее начало
+    // координат совпадает с началом мировой СК.
+    // Чтобы убедиться в корректности построения, измените вид проекции с
+    // помощью команды меню тестового приложения Окно->Ориентировать или
+    // поверните модель нажатием комбинации клавиш Ctrl+стрелка.
+    MbPlacement3D pl3 = pl;
+    MbAxis3D global_axX( MbCartPoint3D(0,0,0), MbVector3D(1,0,0) );
+    MbAxis3D global_axY( MbCartPoint3D(0,0,0), MbVector3D(0,1,0) );
+    pl3.Rotate( global_axX, M_PI/3 );
+    pl3.Rotate( global_axY, M_PI/3 );
+    pl3.Move(40 * MbVector3D(1, 1, 1));
+    DrawCoordSystem( pl3, 5.0 );
+    return true;
+}
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"
+
+#include <mb_axis3d.h>
+#include "surf_sphere_surface.h" // MbSphereSurface – сферическая поверхность
+#include "surf_cylinder_surface.h" // MbCylinderSurface – цилиндрическая поверхность
+#include "surf_cone_surface.h" // MbConeSurface - коническая поверхность
+#include "action_surface.h" // Функции-утилиты для построения поверхностей
+
+// Функция для отображения локальной СК _cs в виде набора элементарных поверхностей
+void DrawCoordSystem( const MbPlacement3D& _cs, const double _axesLen )
+{
+ // Центр и оси СК _cs
+    MbCartPoint3D csCnt( _cs.GetOrigin() );
+    // При создании осей в виде объектов MbAxis3D необходимо корректно указывать
+    // не только направление, но и начало оси – иначе повороты вокруг этих
+    // осей будут вычисляться некорректно.
+    MbAxis3D csAxX( csCnt, _cs.GetAxisX() );
+    MbAxis3D csAxY( csCnt, _cs.GetAxisY() );
+    MbAxis3D csAxZ( csCnt, _cs.GetAxisZ() );
+    
+    // Характеристики цилиндрических поверхностей, изображающих оси координат:
+    // - высота цилиндров - _axesLen
+    // - радиус цилиндров - 5% от высоты, но не менее MIN_CYL_RAD
+    double cylHeight = _axesLen;
+    const double MIN_CYL_RAD = 0.5;
+    double cylRadius = std::max<double>( cylHeight*0.05, MIN_CYL_RAD );
+    
+    // Вычисление локальных СК для цилиндров, изображающих
+    // координатные оси: plCylX, plCylY, plCylZ.
+    // Центры СК цилиндров совпадают с центром _cs.
+    // В локальной СК каждого цилиндра ось Z ориентирована вдоль одной из осей _cs,
+    // поэтому plCyZ совпадает с _cs, а plCylX и plCylY вычисляются посредством
+    // поворота _cs вокруг одной из осей на 90 градусов.
+    MbPlacement3D plCylX(_cs), plCylY(_cs), plCylZ(_cs);
+    plCylX.Rotate( csAxY, M_PI/2 );
+    plCylY.Rotate( csAxX, -M_PI/2 );
+    
+    // Цилиндрические поверхности, изображающие оси X, Y и Z системы координат _cs
+    MbCylinderSurface* pCylX = new MbCylinderSurface( plCylX, cylRadius, cylHeight );
+    MbCylinderSurface* pCylY = new MbCylinderSurface( plCylY, cylRadius, cylHeight );
+    MbCylinderSurface* pCylZ = new MbCylinderSurface( plCylZ, cylRadius, cylHeight );
+    
+    // Сферическая поверхность, изображающая начало координат.
+    // Радиус сферы превышает радиус цилиндров, чтобы сферу было видно при отображении.
+    double sphereRadius = cylRadius*2;
+    MbSphereSurface* pSphere = new MbSphereSurface( _cs.GetOrigin(), sphereRadius );
+    
+    // Характеристики конических поверхностей, изображающих стрелки на осях координат:
+    // - радиусы конусов совпадают с радиусом сферы, изображающей начало координат;
+    // - высота конусов - 20% от высоты цилиндров;
+    // - угол между образующей и высотой конуса определяется радиусом и высотой.
+    double coneRadius = sphereRadius;
+    double coneHeight = cylHeight*0.2;
+    double coneAngle = atan( coneRadius/coneHeight );
+    
+    // Вычисление локальных СК конических поверхностей, изображающих
+    // стрелки осей координат: plConeX, plConeY и plConeZ.
+    // Ось конуса в его локальной СК направлена в сторону "-Z", а вершина конуса
+    // располагается в начале этой СК.
+    // Для вычисления локальной СК каждого конуса производятся действия:
+    // 1) СК конуса совмещается с СК цилиндра;
+    // 2) СК поворачивается вокруг своей оси X, чтобы изменить направление
+    // оси Z на противоположное;
+    // 3) СК смещается вдоль оси Z на величину -coneOfs так, чтобы основание
+    // конуса располагалось на "конце оси".
+    MbPlacement3D plConeX = plCylX;
+    double coneOfs = (cylHeight + coneHeight);
+    MbAxis3D cylX_axX(plCylX.GetOrigin(), plCylX.GetAxisX());
+    plConeX.Rotate(cylX_axX, M_PI);
+    plConeX.Move( plConeX.GetAxisZ() * -coneOfs );
+    
+    MbPlacement3D plConeY = plCylY;
+    MbAxis3D cylY_axX(plCylY.GetOrigin(), plCylY.GetAxisX());
+    plConeY.Rotate(cylY_axX, M_PI);
+    plConeY.Move( plConeY.GetAxisZ() * -coneOfs );
+    
+    MbPlacement3D plConeZ = plCylZ;
+    MbAxis3D cylZ_axX(plCylZ.GetOrigin(), plCylZ.GetAxisX());
+    plConeZ.Rotate(cylZ_axX, M_PI);
+    plConeZ.Move( plConeZ.GetAxisZ() * -coneOfs );
+    // При построении конических поверхностей в качестве радиуса указывается 0 - в таком
+    // случае строится конус с вершиной. Если указывается значение радиуса >0 - то
+    // строится поверхность усеченного конуса.
+    MbConeSurface* pConeX = new MbConeSurface( plConeX, 0.0, coneAngle, coneHeight );
+    MbConeSurface* pConeY = new MbConeSurface( plConeY, 0.0, coneAngle, coneHeight );
+    MbConeSurface* pConeZ = new MbConeSurface( plConeZ, 0.0, coneAngle, coneHeight );
+    
+    // Отображение поверхностей
+    show(Style(1, LIGHTRED), pCylX );
+    show(Style(1, LIGHTRED), pConeX );
+    show(Style(1, LIGHTGREEN), pCylY );
+    show(Style(1, LIGHTGREEN), pConeY );
+    show(Style(1, LIGHTBLUE), pCylZ );
+    show(Style(1, LIGHTBLUE), pConeZ );
+    show(Style(1, LIGHTGRAY), pSphere );
+    
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    
+    ::DeleteItem( pCylX );
+    ::DeleteItem( pCylY );
+    ::DeleteItem( pCylZ );
+    ::DeleteItem( pConeX );
+    ::DeleteItem( pConeY );
+    ::DeleteItem( pConeZ );
+    ::DeleteItem( pSphere );
+    
+}
+bool run()
+{
+    // Создание цилиндрической поверхности вызовом функции-утилиты ::ElementarySurface
+    // Радиус и высота цилиндра
+    const double RADIUS1 = 5;
+    const double HEIGHT1 = 25;
+    MbSurface* pSurfCyl1 = NULL;
+    MbCartPoint3D p0(0, 0, 0), p1(HEIGHT1, 0, 0), p2(0, RADIUS1, 0);
+    ::ElementarySurface( p0, p1, p2, st_CylinderSurface, pSurfCyl1 );
+    if ( pSurfCyl1 == NULL )
+        return false;
+        
+    // Преобразование указателя pSurfCyl1 на указатель типа MbCylinderSurface*.
+    // Если преобразование невозможно, то pCyl1 будет равен 0.
+    MbCylinderSurface* pCyl1 = dynamic_cast<MbCylinderSurface*>(pSurfCyl1);
+    if ( pCyl1 == NULL )
+        return false;
+    
+    // Отображение цилиндра pCyl1 и его локальной СК
+    show(Style(1, LIGHTGRAY), pCyl1 );
+    MbPlacement3D plCyl1 = pCyl1->GetPlacement();
+    DrawCoordSystem( plCyl1, 5 );
+    
+    // Построение цилиндра вдвое меньшей высоты и радиуса.
+    // Выполняется создание копии первого цилиндра и изменение его свойств.
+    MbCylinderSurface* pCyl2 = dynamic_cast<MbCylinderSurface*>(&pCyl1->Duplicate());
+    if ( pCyl2 )
+    {
+        double RADIUS2 = pCyl1->GetR()/2;
+        double HEIGHT2 = pCyl1->GetHeight()/2;
+        pCyl2->SetR( RADIUS2 );
+        pCyl2->SetHeight( HEIGHT2 );
+        // Смещение второго цилиндра вправо по оси X и вверх по оси Y
+        pCyl2->Move(MbVector3D( (HEIGHT1 - HEIGHT2)/2, RADIUS1+RADIUS2*1.5, 0 ));
+        
+        // Отображение цилиндра pCyl2 и его локальной СК
+        show(Style(1, LIGHTGRAY), pCyl2 );
+        MbPlacement3D plCyl2 = pCyl2->GetPlacement();
+        DrawCoordSystem( plCyl2, 5 );
+    }
+    
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    
+    ::DeleteItem( pCyl1 );
+    ::DeleteItem( pCyl2 );
+    
+    return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+#include "surf_plane.h"
+bool run()
+{
+    // Плоскость - построение по трем точкам
+    MbCartPoint3D p1( -15, 0, 0 ), p2( 15, 0, 0 ), p3( 0, 0, 15 );
+    MbPlane* pPlane = new MbPlane( p1, p2, p3 );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pPlane );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pPlane );
+    return true;
+}
+[end]
+[id = "code_block_7"]
+[begin]
+#include "setup.h"
+#include "surf_sphere_surface.h"
+bool run()
+{
+    // Сферическая поверхность - построение по центру и радиусу
+    MbSphereSurface* pSurf = new MbSphereSurface( MbCartPoint3D(0,0,0), 10 );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_8"]
+[begin]
+#include "setup.h"
+#include "surf_cylinder_surface.h"
+bool run()
+{
+    // Цилиндрическая поверхность - построение по трем точкам
+    const MbCartPoint3D p0( 0, 0, 0 ); // Центр локальной СК цилиндра (центр основания)
+    const MbCartPoint3D p1( 0, 10, 0 ); // Вектор p0-p1 задает ось Z локальной СК
+    // и высоту цилиндра
+    const MbCartPoint3D p2( 2, 0, 0 ); // Вектор p0-p2 задает ось X локальной СК и
+    // радиус основания
+    MbCylinderSurface* pSurf = new MbCylinderSurface( p0, p1, p2 );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSurf);
+    return true;
+}
+[end]
+[id = "code_block_9"]
+[begin]
+#include "setup.h"
+#include "surf_cone_surface.h"
+bool run()
+{
+    // Коническая поверхность - конструктор по локальной системе координат,
+    // радиусу, углу и высоте.
+    const MbPlacement3D pl; // Локальная СК совпадает с мировой
+    const double radius = 0; // Радиус в плоскости XY локальной СК
+    // (если 0 - строится коническая поверхность конуса,
+    // если >0 - строится поверхность усеченного конуса)
+    // Угол между осью Z локальной СК и боковой образующей
+    const double angle = 22.5*M_PI/180.0;
+    const double height = 10; // Высота конуса (вдоль оси Z)
+    MbConeSurface* pSurf = new MbConeSurface( pl, radius, angle, height );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_10"]
+[begin]
+#include "setup.h"
+#include "surf_torus_surface.h"
+bool run()
+{
+    // Тороидальная поверхность: конструктор по локальной СК и двум радиусам
+    // Ось Z локальной СК является осью вращательной симметрии торической поверхности
+    const MbPlacement3D pl; // Локальная СК совпадает с мировой.
+    const double radius1 = 10; // Радиус центров трубки тора
+    const double radius2 = 3; // Радиус трубки тора
+    MbTorusSurface* pSurf = new MbTorusSurface( pl, radius1, radius2 );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_11"]
+[begin]
+#include "setup.h"
+#include "surf_revolution_surface.h"
+#include "surf_plane.h"
+#include "cur_surface_intersection.h"
+#include "cur_bezier3d.h"
+#include "mb_axis3d.h"
+#include "action_surface_curve.h"
+#include "name_item.h"
+#include "wire_frame.h"
+bool run()
+{ 
+    // Построение поверхности вращения по образующей, оси вращения и углу
+    SArray<MbCartPoint3D> arrGenPnts(7);
+    arrGenPnts.Add(MbCartPoint3D(2.5, 20, 0));
+    arrGenPnts.Add(MbCartPoint3D(4, 10, 0));
+    arrGenPnts.Add(MbCartPoint3D(9.7, 7.4, 0));
+    arrGenPnts.Add(MbCartPoint3D(9.7, 4, 0));
+    arrGenPnts.Add(MbCartPoint3D(7.6, 2.2, 0));
+    arrGenPnts.Add(MbCartPoint3D(10, -7, 0));
+    arrGenPnts.Add(MbCartPoint3D(9.8, -11, 0));
+    MbBezier3D* pGenCurve = MbBezier3D::Create( arrGenPnts, false );
+    MbAxis3D axRev( MbCartPoint3D(0,0,0), MbVector3D(0, 1, 0) );
+    MbRevolutionSurface* pSurf = new MbRevolutionSurface(
+    *pGenCurve, axRev, 2*M_PI, false );
+    // Вычисление сечения поверхности pSurf горизонтальной плоскостью
+    MbPlane* pPlane = new MbPlane( MbCartPoint3D( -20, 0, 0 ),
+    MbCartPoint3D( 20, 0, -20 ), MbCartPoint3D( 20, 0, 20 ) );
+    MbSNameMaker names( ct_Curve3DCreator, MbSNameMaker::i_SideNone, 0 );
+    MbWireFrame* pFrCurve = new MbWireFrame();
+    // Получение кривых пересечения поверхности pSurf плоскостью pPlane
+    IntersectionCurve( *pSurf, *pPlane, names, pFrCurve );
+    RPArray<MbCurve3D> arrCurves( 4 /* Начальная емкость массива */ );
+    ::ExtractCurvesDeleteFrame( pFrCurve, arrCurves );
+    // Кривая pC, изображающая направляющую - это вычисленная кривая сечения,
+    // к которой применяется преобразование масштабирования, чтобы
+    // это сечение было видно поверх поверхности вращения
+    MbCurve3D* pC = ((MbSurfaceIntersectionCurve*)(arrCurves[0]))->MakeCurve();
+    MbMatrix3D mScale = MbMatrix3D::identity;
+    mScale.Scale( 1.05, 1, 1.05 );
+    pC->Transform( mScale );
+    // Отображение образующей, направляющей и поверхности
+    show(Style(5, LIGHTRED), pGenCurve);
+    show(Style(5, LIGHTBLUE), pC );
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    
+    ::DeleteItem( pGenCurve);
+    ::DeleteItem( pFrCurve);
+    ::DeleteItem( pSurf );
+    
+    return true;
+}
+[end]
+[id = "code_block_12"]
+[begin]
+#include "setup.h"
+#include "surf_extrusion_surface.h"
+#include "cur_line_segment3d.h"
+#include "cur_bezier3d.h"
+#include "mb_axis3d.h"
+bool run()
+{
+    // Построение поверхности выдавливания по образующей и направлению выдавливания
+    SArray<MbCartPoint3D> arrGenPnts(9);
+    arrGenPnts.Add(MbCartPoint3D(14.2875, -88.9000, 0));
+    arrGenPnts.Add(MbCartPoint3D(17.4625, -63.5000, 0));
+    arrGenPnts.Add(MbCartPoint3D(41.2750, -63.5000, 0));
+    arrGenPnts.Add(MbCartPoint3D(47.6250, -44.7145, 0));
+    arrGenPnts.Add(MbCartPoint3D(58.7375, -31.4854, 0));
+    arrGenPnts.Add(MbCartPoint3D(74.0833, -37.0417, 0));
+    arrGenPnts.Add(MbCartPoint3D(87.5771, -24.8708, 0));
+    arrGenPnts.Add(MbCartPoint3D(80.1687, -16.9333, 0));
+    arrGenPnts.Add(MbCartPoint3D(85.9896, -9.2604, 0));
+    MbBezier3D* pGenCurve = MbBezier3D::Create( arrGenPnts, false );
+    MbVector3D dir( 0, 0, 50 );
+    MbExtrusionSurface* pSurf = new MbExtrusionSurface( *pGenCurve, dir, false );
+    // Отрезок, представляющий направляющую выдавливания
+    MbLineSegment3D* pTrajCurve = new MbLineSegment3D(arrGenPnts.back(),
+    arrGenPnts.back() + dir );
+    // Отображение образующей, направляющей и поверхности
+    show(Style(5, LIGHTRED), pGenCurve);
+    show(Style(5, LIGHTBLUE), pTrajCurve);
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    
+    ::DeleteItem( pGenCurve );
+    ::DeleteItem( pTrajCurve );
+    ::DeleteItem( pSurf );
+    
+    return true;
+}
+[end]
+[id = "code_block_13"]
+[begin]
+#include "setup.h"
+#include "surf_expansion_surface.h"
+#include "cur_bezier3d.h"
+#include "cur_polyline3d.h"
+#include "mb_axis3d.h"
+bool run()
+{
+    // Построение поверхности плоскопараллельного движения по образующей и направляющей
+    // Образующая строится в виде кривой Безье, проходящей через заданные точки
+    SArray<MbCartPoint3D> arrGenPnts(7);
+    arrGenPnts.Add(MbCartPoint3D(0, 0, 0));
+    arrGenPnts.Add(MbCartPoint3D(25.4, -7.94, 0));
+    arrGenPnts.Add(MbCartPoint3D(43.39, 6.09, 0));
+    arrGenPnts.Add(MbCartPoint3D(44.19, 33.34, 0));
+    arrGenPnts.Add(MbCartPoint3D(30.69, 56.62, 0));
+    arrGenPnts.Add(MbCartPoint3D(51.85, 79.40, 0));
+    arrGenPnts.Add(MbCartPoint3D(57.41, 94.75, 0));
+    MbBezier3D* pGenCurve = MbBezier3D::Create( arrGenPnts, false );
+    // Направляющая строится в виде ломаной линии
+    SArray<MbCartPoint3D> arrTrajPnts (6);
+    arrTrajPnts.Add(MbCartPoint3D(0, 0, 0));
+    arrTrajPnts.Add(MbCartPoint3D(10, 0, 0));
+    arrTrajPnts.Add(MbCartPoint3D(10, 0, 20));
+    arrTrajPnts.Add(MbCartPoint3D(5, 0, 20));
+    arrTrajPnts.Add(MbCartPoint3D(5, 0, 40));
+    arrTrajPnts.Add(MbCartPoint3D(0, 0, 50));
+    MbPolyline3D* pTrajCurve = new MbPolyline3D( arrTrajPnts, false );
+    // Построение поверхности
+    MbExpansionSurface* pSurf = new MbExpansionSurface( *pGenCurve, *pTrajCurve,
+    false, false, NULL );
+    // Отображение образующей, направляющей и поверхности
+    show(Style(5, LIGHTRED), pGenCurve);
+    show(Style(5, LIGHTBLUE), pTrajCurve);
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pGenCurve);
+    ::DeleteItem( pTrajCurve);
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_14"]
+[begin]
+#include "setup.h"
+#include "surf_spiral_surface.h"
+#include "cur_arc3d.h"
+#include "cur_cone_spiral.h"
+#include "mb_cart_point3d.h"
+bool run()
+{
+    // Построение образующей и направляющей
+    MbArc3D* pGenCurve = new MbArc3D(
+    MbCartPoint3D(5, 0, 0), MbCartPoint3D(6, 0, 0),
+    MbCartPoint3D(5, 0, -1), 0, true );
+    MbPlacement3D pl( MbCartPoint3D(0,0,0 ) );
+    MbConeSpiral* pCS = new MbConeSpiral( pl, 5, 5, 17, 3 );
+    // Построение спиральной поверхности
+    MbSpiralSurface* pSurf = new MbSpiralSurface( *pGenCurve, *pCS, false );
+    // Отображение образующей, направляющей и поверхности
+    show(Style(5, LIGHTRED), pGenCurve);
+    show(Style(5, LIGHTBLUE), pCS );
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pCS );
+    ::DeleteItem( pGenCurve);
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_15"]
+[begin]
+#include "setup.h"
+#include "surf_evolution_surface.h"
+#include "cur_arc3d.h"
+#include "cur_bezier3d.h"
+#include "mb_cart_point3d.h"
+bool run()
+{
+    // Построение образующей (окружность по трем точкам)
+    MbArc3D* pGenCurve = new MbArc3D( MbCartPoint3D(6.6, 1.3, 0),
+    MbCartPoint3D(0, 0, 0),
+    MbCartPoint3D(11.7, 6.1, 0));
+    // Построение направляющей (кривая Безье по точкам)
+    SArray<MbCartPoint3D> arrTrajPnts(7);
+    arrTrajPnts.Add(MbCartPoint3D(0, 0, 0));
+    arrTrajPnts.Add(MbCartPoint3D(7.6, 0, 18.2));
+    arrTrajPnts.Add(MbCartPoint3D(18.5, 0, 20.6));
+    arrTrajPnts.Add(MbCartPoint3D(36.0, 0, 14.7));
+    arrTrajPnts.Add(MbCartPoint3D(40.1, 0.0, 0));
+    arrTrajPnts.Add(MbCartPoint3D(69.7, 0.0, 0));
+    arrTrajPnts.Add(MbCartPoint3D(80.4, 0.0, 0));
+    MbBezier3D* pTrajCurve = MbBezier3D::Create(arrTrajPnts, false);
+    // Описание направляющей для кинематической поверхности
+    MbSpine::Create(*pTrajCurve, false, false);
+    // Построение кинематической поверхности
+    MbEvolutionSurface* pSurf = new MbEvolutionSurface(*pGenCurve,
+    MbSpine::Create(*pTrajCurve, false, false), false, false);
+    // Отображение образующей, направляющей и поверхности
+    show(Style(5, LIGHTRED), pGenCurve);
+    show(Style(5, LIGHTBLUE), pTrajCurve);
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem(pGenCurve);
+    ::DeleteItem(pTrajCurve);
+    ::DeleteItem(pSurf);
+    return true;
+}
+[end]
+[id = "code_block_16"]
+[begin]
+#include "setup.h"
+#include "surf_exaction_surface.h"
+#include "cur_arc3d.h"
+#include "cur_bezier3d.h"
+#include "mb_cart_point3d.h"
+bool run()
+{
+    // Построение образующей (окружность по трем точкам)
+    MbArc3D* pGenCurve = new MbArc3D(MbCartPoint3D(6.6, 1.3, 0),
+    MbCartPoint3D(0, 0, 0), MbCartPoint3D(11.7, 6.1, 0));
+    // Построение направляющей (кривая Безье по точкам)
+    SArray<MbCartPoint3D> arrTrajPnts(7);
+    arrTrajPnts.Add(MbCartPoint3D(0, 0, 0));
+    arrTrajPnts.Add(MbCartPoint3D(7.6, 0, 18.2));
+    arrTrajPnts.Add(MbCartPoint3D(18.5, 0, 20.6));
+    arrTrajPnts.Add(MbCartPoint3D(36.0, 0, 14.7));
+    arrTrajPnts.Add(MbCartPoint3D(40.1, 0.0, 0));
+    arrTrajPnts.Add(MbCartPoint3D(69.7, 0.0, 0));
+    arrTrajPnts.Add(MbCartPoint3D(80.4, 0.0, 0));
+    // Описание направляющей для кинематической поверхности.
+    MbBezier3D* pTrajCurve = MbBezier3D::Create(arrTrajPnts, false);
+    // Построение кинематической поверхности с адаптацией
+    // Для поверхности с адаптацией с помощью векторов нормали задается ориентация
+    // сечений на границах поверхности
+    MbVector3D n0(0, 5, -5);
+    MbVector3D n1(5, 5, 0);
+    MbExactionSurface* pSurf = new MbExactionSurface(*pGenCurve, false,
+        MbSpine::Create(*pTrajCurve, false, false),n0, M_PI / 4, n1, M_PI / 4, 0);
+    // Отображение образующей, направляющей и поверхности
+    show(Style(5, LIGHTRED), pGenCurve);
+    show(Style(5, LIGHTBLUE), pTrajCurve);
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem(pGenCurve);
+    ::DeleteItem(pTrajCurve);
+    ::DeleteItem(pSurf);
+    return true;
+}
+[end]
+[id = "code_block_17"]
+[begin]
+#include "setup.h"
+#include "surf_ruled_surface.h"
+#include "cur_polyline3d.h"
+#include "cur_arc3d.h"
+bool run()
+{
+    // Первая граничная кривая – дуга окружности
+    MbCartPoint3D p1(-1.5, 0, 0), p2(1, 2, 0), p3(3.5, 0, 0);
+    MbArc3D* pC1 = new MbArc3D(p1, p2, p3, 1, false);
+    // Вторая граничная кривая – ломаная по точкам
+    SArray<MbCartPoint3D> arrPnts(8);
+    arrPnts.Add(MbCartPoint3D(-3, 0, -5));
+    arrPnts.Add(MbCartPoint3D(-3, 6, -5));
+    arrPnts.Add(MbCartPoint3D(0, 6, -5));
+    arrPnts.Add(MbCartPoint3D(0, 4, -5));
+    arrPnts.Add(MbCartPoint3D(2, 4, -5));
+    arrPnts.Add(MbCartPoint3D(2, 6, -5));
+    arrPnts.Add(MbCartPoint3D(5, 6, -5));
+    arrPnts.Add(MbCartPoint3D(5, 0, -5));
+    MbPolyline3D* pC2 = new MbPolyline3D(arrPnts, false);
+    // Построение линейчатой поверхности по двум граничным кривым
+    MbRuledSurface* pSurf = new MbRuledSurface(*pC1, *pC2, false);
+    // Отображение граничных кривых и поверхности
+    show(Style(5, LIGHTRED), pC1);
+    show(Style(5, LIGHTRED), pC2);
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem(pC1);
+    ::DeleteItem(pC2);
+    ::DeleteItem(pSurf);
+    return true;
+}
+[end]
+[id = "code_block_18"]
+[begin]
+#include "setup.h"
+#include "surf_sector_surface.h"
+#include "cur_polyline3d.h"
+#include "cur_arc3d.h"
+#include "point_frame.h"
+bool run()
+{
+    // Граничная кривая – ломаная по точкам
+    SArray<MbCartPoint3D> arrPnts(8);
+    arrPnts.Add(MbCartPoint3D(-3, 0, -5));
+    arrPnts.Add(MbCartPoint3D(-3, 6, -5));
+    arrPnts.Add(MbCartPoint3D(0, 6, -5));
+    arrPnts.Add(MbCartPoint3D(0, 4, -5));
+    arrPnts.Add(MbCartPoint3D(2, 4, -5));
+    arrPnts.Add(MbCartPoint3D(2, 6, -5));
+    arrPnts.Add(MbCartPoint3D(5, 6, -5));
+    arrPnts.Add(MbCartPoint3D(5, 0, -5));
+    MbPolyline3D* pC = new MbPolyline3D( arrPnts, false );
+    // Построение секториальной поверхности по граничной кривой и точке
+    MbSectorSurface* pSurf = new MbSectorSurface( *pC, MbCartPoint3D( 1, 0, 0 ), false );
+    // Отображение граничной кривой, точки и поверхности
+    show(Style(5, LIGHTRED), pC );
+    show(Style(5, LIGHTRED),
+    new MbPointFrame(MbCartPoint3D(1, 0, 0)) );
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pC );
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_19"]
+[begin]
+#include "setup.h"
+#include "surf_lofted_surface.h"
+#include "cur_polyline3d.h"
+#include "cur_arc3d.h"
+bool run()
+{
+    // 5 кривых сечений: дуга окружности, ломаная, дуга, ломаная, дуга
+    MbArc3D* pC1 = new MbArc3D(MbCartPoint3D(-3, 0, 0),
+    MbCartPoint3D(0, 2, 0), MbCartPoint3D(3, 0, 0), 1, false );
+    std::vector<MbCartPoint3D> arrPnts2 = { { -3, 0, -5 }, { -3, 2, -5 },
+    { 3, 2, -5 }, { 3, 0, -5 } };
+    MbPolyline3D* pC2 = new MbPolyline3D( arrPnts2, false );
+    MbArc3D* pC3 = new MbArc3D(MbCartPoint3D(-3, 5, -10),
+    MbCartPoint3D(0, 7, -10), MbCartPoint3D(3, 5, -10), 1, false );
+    std::vector<MbCartPoint3D> arrPnts4 = { { -3, 0, -15 }, { -3, 2, -15 },
+    { 3, 2, -15 }, { 3, 0, -15 } };
+    MbPolyline3D* pC4 = new MbPolyline3D( arrPnts4, false );
+    MbArc3D* pC5 = new MbArc3D(MbCartPoint3D(-3, 0, -20),
+    MbCartPoint3D(0, 2, -20), MbCartPoint3D(3, 0, -20), 1, false );
+    // Помещение указателей на сечения в массив
+    RPArray<MbCurve3D> arrCurves;
+    arrCurves.Add( pC1 );
+    arrCurves.Add( pC2 );
+    arrCurves.Add( pC3 );
+    arrCurves.Add( pC4 );
+    arrCurves.Add( pC5 );
+    // Построение поверхности по сечениям
+    MbVector3D v1( 0, 0, 1 );
+    MbVector3D v2( 0, 0, -1 );
+    MbLoftedSurface* pSurf = new MbLoftedSurface( arrCurves, false, v1, v2, false );
+    // Отображение кривых-сечений
+    for (int i = 0, iLim = arrCurves.size(); i<iLim; i++)
+    show(Style(5, LIGHTRED), arrCurves[i] );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    for (int i = 0, iLim = arrCurves.size(); i<iLim; i++)
+      ::DeleteItem(arrCurves[i]);
+
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_20"]
+[begin]
+#include "setup.h"
+#include "surf_elevation_surface.h"
+#include "cur_polyline3d.h"
+#include "cur_bezier3d.h"
+#include "cur_arc3d.h"
+bool run()
+{
+    // 5 кривых сечений: дуга окружности, ломаная, дуга, ломаная, дуга
+    MbArc3D* pC1 = new MbArc3D(MbCartPoint3D(-3, 0, 0),
+    MbCartPoint3D(0, 2, 0), MbCartPoint3D(3, 0, 0), 1, false );
+    std::vector<MbCartPoint3D> arrPnts2 = { { -3, 0, -5 }, { -3, 2, -5 },
+    { 3, 2, -5 }, { 3, 0, -5 } };
+    MbPolyline3D* pC2 = new MbPolyline3D( arrPnts2, false );
+    MbArc3D* pC3 = new MbArc3D(MbCartPoint3D(-3, 5, -10),
+    MbCartPoint3D(0, 7, -10), MbCartPoint3D(3, 5, -10), 1, false );
+    std::vector<MbCartPoint3D> arrPnts4 = { { -3, 0, -15 }, { -3, 2, -15 },
+    { 3, 2, -15 }, { 3, 0, -15 } };
+    MbPolyline3D* pC4 = new MbPolyline3D( arrPnts4, false );
+    MbArc3D* pC5 = new MbArc3D(MbCartPoint3D(-3, 0, -20),
+    MbCartPoint3D(0, 2, -20), MbCartPoint3D(3, 0, -20), 1, false );
+    // Помещение указателей на сечения в массив
+    RPArray<MbCurve3D> arrCurves;
+    arrCurves.Add( pC1 );
+    arrCurves.Add( pC2 );
+    arrCurves.Add( pC3 );
+    arrCurves.Add( pC4 );
+    arrCurves.Add( pC5 );
+    // Направляющая кривая – кривая Безье
+    SArray<MbCartPoint3D> arrPnts(9);
+    arrPnts.Add(MbCartPoint3D(0, 2, 0));
+    arrPnts.Add(MbCartPoint3D(0, 3, -2.5));
+    arrPnts.Add(MbCartPoint3D(0, 2, -5));
+    arrPnts.Add(MbCartPoint3D(0, 6.0, -7.5));
+    arrPnts.Add(MbCartPoint3D(0, 7, -10));
+    arrPnts.Add(MbCartPoint3D(0, 6.0, -12.5));
+    arrPnts.Add(MbCartPoint3D(0, 2, -15));
+    arrPnts.Add(MbCartPoint3D(0, 3, -17.5));
+    arrPnts.Add(MbCartPoint3D(0, 2, -20));
+    MbBezier3D* pSpine = MbBezier3D::Create(arrPnts, false);
+    // Построение поверхности по сечениям с заданной направляющей
+    MbElevationSurface* pSurf = new MbElevationSurface(arrCurves, false, *pSpine, false);
+    // Отображение сечений
+    for (int i = 0, iLim = arrCurves.size(); i<iLim; i++)
+    show(Style(5, LIGHTRED), arrCurves[i] );
+    // Отображение направляющей
+    show(Style(5, LIGHTBLUE), pSpine );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf);
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    for (int i = 0, iLim = arrCurves.size(); i<iLim; i++)
+      ::DeleteItem(arrCurves[i]);
+
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_21"]
+[begin]
+#include "setup.h"
+#include "surf_extrusion_surface.h" // MbExtrusionSurface - Поверхность выдавливания
+// MbJoinSurface - Поверхность сопряжения по набору кривых
+#include "surf_join_surface.h"
+#include "cur_line_segment3d.h" // MbLineSegment3D - Отрезок в трехмерном пространстве
+#include "cur_bezier3d.h" // MbBezier3D - Сплайновая кривая Безье
+bool run()
+{
+    // Фрагменты плоскостей (прямоугольники), для которых надо построить сопрягающую
+    // поверхность.
+    // Поскольку класс "Плоскость" MbPlane предназначен для представления
+    // бесконечной плоскости, то прямоугольник удобнее построить как поверхность
+    // выдавливания с указанием отрезка в качестве образующей.
+    MbLineSegment3D* pBoundSeg1 = new MbLineSegment3D(
+    MbCartPoint3D( -5, 0, 0 ), MbCartPoint3D ( 5, 0, 0 ) );
+    MbVector3D vecGen1( 0, 0, 15 );
+    MbExtrusionSurface* pPlane1 = new MbExtrusionSurface( *pBoundSeg1, vecGen1, false );
+    MbLineSegment3D* pBoundSeg2 = new MbLineSegment3D(
+    MbCartPoint3D( -5, 5, -10 ), MbCartPoint3D ( 5, 5, -10 ) );
+    MbVector3D vecGen2( 0, 15, -5 );
+    MbExtrusionSurface* pPlane2 = new MbExtrusionSurface( *pBoundSeg2, vecGen2, false );
+    // Сопрягающая поверхность по набору кривых MbJoinSurface.
+    // Для ее построения указывается набор кривых, содержащий граничные кривые
+    // сопрягаемых поверхностей, а также промежуточные кривые, регулирующие форму
+    // сопряжения (в данном случае это пара незамкнутых кривых Безье,
+    // напоминающих волнистую линию).
+    SArray<MbCartPoint3D> arrPnts(7);
+    arrPnts.Add(MbCartPoint3D(-5, 2, -2));
+    arrPnts.Add(MbCartPoint3D(-4, 3, -2));
+    arrPnts.Add(MbCartPoint3D(-3, 2, -2));
+    arrPnts.Add(MbCartPoint3D(0, 1, -2));
+    arrPnts.Add(MbCartPoint3D(3, 2, -2));
+    arrPnts.Add(MbCartPoint3D(4, 3, -2));
+    arrPnts.Add(MbCartPoint3D(5, 2, -2));
+    MbBezier3D* pCurve1 = MbBezier3D::Create( arrPnts, false );
+    MbBezier3D* pCurve2 = MbBezier3D::Create( arrPnts, false );
+    pCurve2->Move(MbVector3D( 0, 3, -3 ));
+    RPArray<MbCurve3D> arrCurves;
+    arrCurves.Add( pBoundSeg1 );
+    arrCurves.Add( pCurve1 );
+    arrCurves.Add( pCurve2 );
+    arrCurves.Add( pBoundSeg2 );
+    MbJoinSurface* pSurf = new MbJoinSurface( arrCurves, false );
+    // Отображение сопрягаемых плоскостей
+    show(Style(1, LIGHTGRAY), pPlane1 );
+    show(Style(1, LIGHTGRAY), pPlane2 );
+    // Отображение сопрягающей поверхности
+    show(Style(1, GREEN), pSurf );
+    // Отображение граничных кривых (в данном примере - отрезков)
+    // сопрягаемых поверхностей
+    show(Style(5, LIGHTRED), pBoundSeg1 );
+    show(Style(5, LIGHTRED), pBoundSeg2 );
+    // Отображение кривых, используемых для задания формы сопрягающей поверхности
+    // (за исключением первой и последней - они совпадают с граничными кривыми)
+    for (int i = 1, iLim = arrCurves.size()-1; i<iLim; i++)
+    show(Style(5, LIGHTBLUE), arrCurves[i] );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    // (pBoundSeg1 и pBoundSeg1 освобождаются в составе arrCurves)
+    for (int i = 0, iLim = arrCurves.size(); i<iLim; i++)
+      ::DeleteItem( arrCurves[i] );
+
+    ::DeleteItem( pPlane1 );
+    ::DeleteItem( pPlane2 );
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_22"]
+[begin]
+#include "setup.h"
+#include "surf_extrusion_surface.h" // MbExtrusionSurface - Поверхность выдавливания
+// MbChamferSurface - Сопрягающая поверхность фаски
+#include "surf_chamfer_surface.h"
+#include "cur_bezier3d.h" // MbBezier3D - Кривая Безье в трехмерном пространстве
+#include "cur_surface_curve.h" // MbSurfaceCurve - Кривая на базовой поверхности
+// Алгоритмы для построения кривых в трехмерном пространстве
+#include "action_surface_curve.h"
+bool run()
+{
+    // Фрагменты плоскостей, для которых надо построить сопрягающую поверхность.
+    // Эти фрагменты строятся как поверхности выдавливания с образующими в виде
+    // кривых Безье.
+    SArray<MbCartPoint3D> arrPnts1(4);
+    arrPnts1.Add(MbCartPoint3D(-5, 0, 0));
+    arrPnts1.Add(MbCartPoint3D(0, 0, 0));
+    arrPnts1.Add(MbCartPoint3D(0, 0, 3));
+    arrPnts1.Add(MbCartPoint3D(5, 0, 0));
+    MbBezier3D* pBoundBezier1 = MbBezier3D::Create( arrPnts1, false );
+    MbVector3D vecGen1( 0, 0, 15 );
+    MbExtrusionSurface* pPlane1 = new MbExtrusionSurface(*pBoundBezier1, vecGen1, false);
+    SArray<MbCartPoint3D> arrPnts2(4);
+    arrPnts2.Add(MbCartPoint3D(-5, 5, -10));
+    arrPnts2.Add(MbCartPoint3D(0, 4, -11));
+    arrPnts2.Add(MbCartPoint3D(1, 5, -12));
+    arrPnts2.Add(MbCartPoint3D(5, 5, -10));
+    MbBezier3D* pBoundBezier2 = MbBezier3D::Create( arrPnts2, false );
+    MbVector3D vecGen2( 0, 15, -5 );
+    MbExtrusionSurface* pPlane2 = new MbExtrusionSurface(*pBoundBezier2, vecGen2, false);
+    // Сопрягаемые граничные кривые областей pPlane1 и pPlane2 необходимо
+    // представить в виде объектов MbSurfaceCurve - "Кривая на поверхности".
+    // Эти кривые рассчитываются как проекции pBoundBezier1 и pBoundBezier2 на
+    // pPlane1 и pPlane2.
+    // Проекционные кривые совпадают с проецируемыми кривыми Безье, но представляются
+    // в виде необходимых объектов MbSurfaceCurve.
+    RPArray<MbCurve3D> arrCurves1;
+    CurveProjection( *pPlane1, *pBoundBezier1, NULL, true, true, arrCurves1 );
+    RPArray<MbCurve3D> arrCurves2;
+    CurveProjection( *pPlane2, *pBoundBezier2, NULL, true, true, arrCurves2 );
+    MbSurfaceCurve* pBoundCurve1 = static_cast<MbSurfaceCurve*>(arrCurves1[0]);
+    MbSurfaceCurve* pBoundCurve2 = static_cast<MbSurfaceCurve*>(arrCurves2[0]);
+    // Сопрягающая поверхность фаски MbChamferSurface.
+    MbChamferSurface* pSurf = new MbChamferSurface( *pBoundCurve1, *pBoundCurve2,
+        0, 0, st_Chamfer );
+    // Отображение сопрягаемых плоскостей
+    show(Style(1, LIGHTGRAY), pPlane1 );
+    show(Style(1, LIGHTGRAY), pPlane2 );
+    // Отображение сопрягающей поверхности
+    show(Style(1, GREEN), pSurf );
+    // Отображение граничных кривых сопрягаемых поверхностей
+    show(Style(5, LIGHTRED), pBoundCurve1 );
+    show(Style(5, LIGHTRED), pBoundCurve2 );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    
+    ::DeleteItem( pBoundBezier1 );
+    ::DeleteItem( pBoundBezier2 );
+    ::DeleteItem( pBoundCurve1 );
+    ::DeleteItem( pBoundCurve2 );
+    ::DeleteItem( pPlane1 );
+    ::DeleteItem( pPlane2 );
+    ::DeleteItem( pSurf );
+    
+    return true;
+}
+[end]
+[id = "code_block_23"]
+[begin]
+#include "setup.h"
+// MbFilletSurface - Сопрягающая поверхность скругления с постоянным радиусом
+#include "surf_fillet_surface.h"
+#include "surf_extrusion_surface.h" // MbExtrusionSurface - Поверхность выдавливания
+#include "cur_line_segment3d.h" // MbLineSegment3D Отрезок в трехмерном пространстве
+#include "cur_surface_curve.h" // MbSurfaceCurve - Кривая на поверхности
+// Алгоритмы для построения кривых в трехмерном пространстве
+#include "action_surface_curve.h"
+bool run()
+{
+    // Фрагменты плоскостей, для которых надо построить сопрягающую поверхность.
+    // Эти фрагменты (прямоугольники) строятся как поверхности выдавливания
+    // с образующими в виде отрезков.
+    MbLineSegment3D* pBoundSeg1 = new MbLineSegment3D(
+    MbCartPoint3D( -5, 0, 0 ), MbCartPoint3D ( 5, 0, 0 ) );
+    MbVector3D vecGen1( 0, 0, 15 );
+    MbExtrusionSurface* pPlane1 = new MbExtrusionSurface( *pBoundSeg1, vecGen1, false );
+    MbLineSegment3D* pBoundSeg2 = new MbLineSegment3D(
+    MbCartPoint3D( -5, 5, -10 ), MbCartPoint3D ( 5, 5, -10 ) );
+    MbVector3D vecGen2( 0, 15, -5 );
+    MbExtrusionSurface* pPlane2 = new MbExtrusionSurface( *pBoundSeg2, vecGen2, false );
+    // Сопрягаемые граничные кривые областей pPlane1 и pPlane2 необходимо
+    // представить в виде объектов MbSurfaceCurve - "Кривая на поверхности".
+    // Эти кривые рассчитываются как проекции pBoundSeg1 и pBoundSeg2 на
+    // pPlane1 и pPlane2.
+    // Проекционные кривые совпадают с проецируемыми отрезками, но представляются в виде
+    // необходимых объектов MbSurfaceCurve.
+    RPArray<MbCurve3D> arrCurves1;
+    CurveProjection( *pPlane1, *pBoundSeg1, NULL, true, true, arrCurves1 );
+    RPArray<MbCurve3D> arrCurves2;
+    CurveProjection( *pPlane2, *pBoundSeg2, NULL, true, true, arrCurves2 );
+    MbSurfaceCurve* pBoundCurve1 = static_cast<MbSurfaceCurve*>(arrCurves1[0]);
+    MbSurfaceCurve* pBoundCurve2 = static_cast<MbSurfaceCurve*>(arrCurves2[0]);
+    // Сопрягающая поверхность фаски MbChamferSurface.
+    MbFilletSurface* pSurf = new MbFilletSurface( *pBoundCurve1, *pBoundCurve2,
+    -15, -15, st_Fillet, true, true );
+    // Отображение сопрягаемых плоскостей
+    show(Style(1, LIGHTGRAY), pPlane1 );
+    show(Style(1, LIGHTGRAY), pPlane2 );
+    // Отображение сопрягающей поверхности
+    show(Style(1, GREEN), pSurf );
+    // Отображение граничных кривых сопрягаемых поверхностей
+    show(Style(5, LIGHTRED), pBoundCurve1 );
+    show(Style(5, LIGHTRED), pBoundCurve2 );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pBoundSeg1 );
+    ::DeleteItem( pBoundSeg2 );
+    ::DeleteItem( pBoundCurve1 );
+    ::DeleteItem( pBoundCurve2 );
+    ::DeleteItem( pPlane1 );
+    ::DeleteItem( pPlane2 );
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_24"]
+[begin]
+#include "setup.h"
+#include "surf_extrusion_surface.h" // MbExtrusionSurface - Поверхность выдавливания
+// MbChannelSurface - Поверхность скругления с переменным радиусом
+#include "surf_channel_surface.h"
+#include "cur_line_segment3d.h" // MbLineSegment3D - Отрезок в трехмерном пространстве
+#include "cur_surface_curve.h" // MbSurfaceCurve - Кривая на поверхности
+// Алгоритмы для построения кривых в трехмерном пространстве
+#include "action_surface_curve.h"
+#include "func_line_function.h" // Объект "Линейная функция"
+
+using namespace c3d;
+
+bool run()
+{
+    // Фрагменты плоскостей, для которых надо построить сопрягающую поверхность.
+    // Эти фрагменты (прямоугольники) строятся как поверхности выдавливания
+    // с образующими в виде отрезков.
+    MbLineSegment3D* pBoundSeg1 = new MbLineSegment3D( MbCartPoint3D( -5, 0, 0 ), MbCartPoint3D ( 5, 0, 0 ) );
+    MbVector3D vecGen1( 0, 0, 15 );
+    MbExtrusionSurface* pPlane1 = new MbExtrusionSurface( *pBoundSeg1, vecGen1, false );
+    MbLineSegment3D* pBoundSeg2 = new MbLineSegment3D( MbCartPoint3D( -5, 5, -10 ),
+    MbCartPoint3D ( 5, 5, -10 ) );
+    MbVector3D vecGen2( 0, 15, -5 );
+    MbExtrusionSurface* pPlane2 = new MbExtrusionSurface( *pBoundSeg2, vecGen2, false );
+    // Сопрягаемые граничные кривые областей pPlane1 и pPlane2 необходимо
+    // представить в виде объектов MbSurfaceCurve - "Кривая на поверхности".
+    // Эти кривые рассчитываются как проекции pBoundSeg1 и pBoundSeg2 на
+    // pPlane1 и pPlane2.
+    // Проекционные кривые совпадают с проецируемыми отрезками, но представляются в виде
+    // необходимых объектов MbSurfaceCurve.
+    RPArray<MbCurve3D> arrCurves1;
+    CurveProjection( *pPlane1, *pBoundSeg1, NULL, true, true, arrCurves1 );
+    RPArray<MbCurve3D> arrCurves2;
+    CurveProjection( *pPlane2, *pBoundSeg2, NULL, true, true, arrCurves2 );
+    MbSurfaceCurve* pBoundCurve1 = static_cast<MbSurfaceCurve*>(arrCurves1[0]);
+    MbSurfaceCurve* pBoundCurve2 = static_cast<MbSurfaceCurve*>(arrCurves2[0]);
+    // Сопрягающая поверхность скругления с переменным радиусом MbChannelSurface.
+    // Радиус изменяется линейно в пределах от 0 до 2.5 по мере движения вдоль
+    // сопрягаемых кривых (это изменение представляется в виде объекта-линейной
+    // функции класса MbLineFunction).
+    MbLineFunction* pFuncLinear = new MbLineFunction( 0, 2.5,
+    pBoundCurve1->GetTMin(), pBoundCurve1->GetTMax() );
+    MbChannelSurface* pSurf = new MbChannelSurface( *pBoundCurve1, *pBoundCurve2,
+    -5, 10, st_Fillet, _ARC_, *pFuncLinear, true );
+    // Отображение сопрягаемых плоскостей
+    show(Style(1, LIGHTGRAY), pPlane1 );
+    show(Style(1, LIGHTGRAY), pPlane2 );
+    // Отображение сопрягающей поверхности
+    show(Style(1, GREEN), pSurf );
+    // Отображение граничных кривых сопрягаемых поверхностей
+    show(Style(5, LIGHTRED), pBoundCurve1 );
+    show(Style(5, LIGHTRED), pBoundCurve2 );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pBoundSeg1 );
+    ::DeleteItem( pBoundSeg2 );
+    ::DeleteItem( pBoundCurve1 );
+    ::DeleteItem( pBoundCurve2 );
+    ::DeleteItem( pPlane1 );
+    ::DeleteItem( pPlane2 );
+    ::DeleteItem( pFuncLinear );
+    ::DeleteItem( pSurf );
+    return true;
+}
+[end]
+[id = "code_block_25"]
+[begin]
+#include "setup.h"
+#include "surf_spline_surface.h" // MbSplineSurface - сплайновая NURBS-поверхность
+#include "point_frame.h" // MbPointFrame - "Точечный каркас"
+#include "action_surface.h" // Алгоритмы построения поверхностей
+
+bool run()
+{
+    // Двумерный массив контрольных точек.
+    // Для примера используются точки, расположенные в узлах равномерной квадратной
+    // сетки PNT_CNTхPNT_CNT на плоскости XZ мировой СК.
+    // Вертикальная координата выпуклости рассчитывается по
+    // формуле y = 5*cos( r*(M_PI/2)/(SIZE/2) ), r=sqrt(x^2+z^2),
+    // чтобы контрольные точки задавали на сетке центрированную выпуклость
+    // ("косинусоидальную"), окруженную плоской границей.
+    // SIZE - размер стороны квадрата на плоскости XZ, который равномерно
+    // заполняется точками сетки
+    // BOUND_CNT - количество точек, образующих плоский участок вокруг выпуклости.
+    SArray<MbCartPoint3D> arrPnts;
+    const int PNT_CNT = 25;
+    const int BOUND_CNT = 3;
+    arrPnts.reserve( PNT_CNT*PNT_CNT );
+    // Начальная угловая точка сетки на плоскости XZ, относительно которой с равным шагом
+    // располагаются остальные точки сетки.
+    const double SIZE = 20;
+    const double X0 = -SIZE/2;
+    const double Z0 = -SIZE/2;
+    // Шаг между точками сетки по координатным осям X и Z
+    const double DX = SIZE/PNT_CNT;
+    const double DZ = SIZE/PNT_CNT;
+    for ( int i=0; i<PNT_CNT; i++ )
+    for (int j = 0; j < PNT_CNT; j++)
+    {
+    double x = X0 + DX*j;
+    double z = Z0 + DZ*i;
+    double y = 0;
+    if (i > BOUND_CNT && i < PNT_CNT - BOUND_CNT &&
+    j > BOUND_CNT && j < PNT_CNT - BOUND_CNT)
+    {
+    double r = sqrt( x*x + z*z );
+    y = 15*cos( r*M_PI/2/(SIZE/2) );
+    }
+    arrPnts.push_back( MbCartPoint3D( x, y, z ) );
+    }
+    // Свойства, влияющие на вид сплайновой поверхности: весовые коэффициенты и
+    // компоненты узловых векторов. В данном примере передаются пустые массивы,
+    // чтобы использовались значения этих свойств "по умолчанию".
+    SArray<double> arrWeights;
+    SArray<double> uKnots;
+    SArray<double> vKnots;
+    // Порядок сплайновой поверхности по направлениям U и V
+    const int U_DEGREE = 3;
+    const int V_DEGREE = 3;
+    // Построение NURBS-поверхности
+    MbSurface* pSurf = 0;
+    ::SplineSurface( arrPnts, arrWeights, PNT_CNT, PNT_CNT, U_DEGREE, uKnots,
+    false, V_DEGREE, vKnots, false, pSurf );
+    // Точечный каркас для отображения контрольных точек
+    MbPointFrame* pPntsFrame = new MbPointFrame();
+    for ( int i=0,iLim=arrPnts.Count(); i<iLim; i++ )
+    pPntsFrame->AddVertex( arrPnts[i] );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf );
+    // Отображение контрольных точек
+    show(Style(1, LIGHTRED), pPntsFrame );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSurf );
+    ::DeleteItem( pPntsFrame );
+    return true;
+}
+[end]
+[id = "code_block_26"]
+[begin]
+#include "setup.h"
+// MbCornerSurface - поверхность, построенная по трем кривым
+#include "surf_corner_surface.h"
+#include "cur_bezier3d.h"
+#include "cur_line_segment3d.h"
+#include "cur_arc3d.h"
+bool run()
+{
+    // Создание пересекающихся кривых pCurve0, pCurve1, pCurve2 - границ поверхности.
+    // Незамкнутая кривая Безье для приближенного представления одного периода
+    // синусоиды в плоскости XY (по SIN_PNT_CNT точкам).
+    SArray<MbCartPoint3D> arrPntsBezier;
+    const double SIN_WIDTH = 7;
+    const int SIN_PNT_CNT = 15;
+    for (int i = 0; i < SIN_PNT_CNT; i++)
+    {
+    double x = i*2*M_PI/SIN_PNT_CNT;
+    double y = 5*sin( x );
+    arrPntsBezier.push_back( MbCartPoint3D(x*SIN_WIDTH,y,0) );
+    }
+    MbBezier3D* pCurve0 = MbBezier3D::Create( arrPntsBezier, false );
+    // Отрезок в плоскости XZ (начальная точка совпадает с начальной точкой pCurve0)
+    MbLineSegment3D* pCurve1 = new MbLineSegment3D(arrPntsBezier[0],
+    MbCartPoint3D(3, -1, 25) );
+    // Дуга окружности, соединяющая pCurve0 и pCurve1 по конечным точкам
+    // Дуга строится по трем точкам. Начальная точка pc1 и конечная pc2 совпадают
+    // с конечными точками pCurve0 и pCurve1.
+    // Промежуточная точка дуги в этом примере вычисляется произвольным образом
+    // (точка - центр отрезка pc1-pc3 смещается вниз по оси y).
+    MbCartPoint3D pc1 = arrPntsBezier[SIN_PNT_CNT - 1];
+    MbCartPoint3D pc3 = pCurve1->GetPoint2();
+    MbCartPoint3D pc2;
+    pc2.x = (pc1.x + pc3.x)/2;
+    pc2.y = (pc1.y + pc3.y)/2 - 10;
+    pc2.z = (pc1.z + pc3.z)/2;
+    MbArc3D* pCurve2 = new MbArc3D( pc1, pc2, pc3, 1, false );
+    // Построение поверхности
+    MbCornerSurface* pSurf = new MbCornerSurface( *pCurve0, *pCurve1, *pCurve2 );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf );
+    // Отображение граничных кривых
+    show(Style(5, LIGHTRED), pCurve0 );
+    show(Style(5, LIGHTRED), pCurve1 );
+    show(Style(5, LIGHTRED), pCurve2 );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSurf );
+    ::DeleteItem( pCurve0 );
+    ::DeleteItem( pCurve1 );
+    ::DeleteItem( pCurve2 );
+    return true;
+}
+[end]
+[id = "code_block_27"]
+[begin]
+#include "setup.h"
+// MbCoverSurface - поверхность, построенная по четырем граничным кривым
+#include "surf_cover_surface.h"
+#include "cur_arc3d.h"
+bool run()
+{
+    // Создание границ поверхности - четырех соединяющихся круговых
+    // дуг pCurve0, pCurve1, pCurve2, pCurve3.
+    // Дуги строятся по трем точкам (используются начальная, средняя и
+    // конечная точка дуги).
+    // При задании точек надо соблюдать направление дуг, чтобы они стыковались
+    // в одном направлении обхода.
+    // Дуга в плоскости XY
+    MbCartPoint3D pc01(0, 0, 0), pc02(5, 5, 0), pc03( 10, 0, 0 );
+    MbArc3D* pCurve0 = new MbArc3D( pc01, pc02, pc03, 1, false );
+    // Дуга в плоскости ZX, начинающаяся в конечной точке pc01 кривой pCurve0
+    MbCartPoint3D pc11 = pc03, pc12(7, 0, 7.5), pc13( 10, 0, 15 );
+    MbArc3D* pCurve1 = new MbArc3D( pc11, pc12, pc13, 1, false );
+    // Дуга в плоскости YX (располагается ниже плоскости ZX), начинающаяся
+    // в конечной точке pCurve2.
+    MbCartPoint3D pc21 = pc13, pc22(5, -3, 15), pc23( 0, 0, 15 );
+    MbArc3D* pCurve2 = new MbArc3D( pc21, pc22, pc23, 1, false );
+    // Дуга в плоскости ZX, соединяющаяся конечную точку pCurve2 с начальной
+    // точкой pCurve0. (Дуга pCurve3 зеркально симметрична для pCurve1)
+    MbCartPoint3D pc31 = pc23, pc32(3, 0, 7.5), pc33 = pc01;
+    MbArc3D* pCurve3 = new MbArc3D( pc31, pc32, pc33, 1, false );
+    // Построение поверхности
+    MbCoverSurface* pSurf = new MbCoverSurface( *pCurve0, *pCurve1, *pCurve2, *pCurve3 );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf );
+    // Отображение граничных кривых
+    show(Style(5, LIGHTRED), pCurve0 );
+    show(Style(5, LIGHTRED), pCurve1 );
+    show(Style(5, LIGHTRED), pCurve2 );
+    show(Style(5, LIGHTRED), pCurve3 );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSurf );
+    ::DeleteItem( pCurve0 );
+    ::DeleteItem( pCurve1 );
+    ::DeleteItem( pCurve2 );
+    ::DeleteItem( pCurve3 );
+    return true;
+}
+[end]
+[id = "code_block_28"]
+[begin]
+#include "setup.h"
+// MbCurveBoundedSurface - поверхность, ограниченная замкнутыми контурами
+// на базовой поверхности
+#include "surf_curve_bounded_surface.h"
+#include "surf_cylinder_surface.h"
+#include "cur_line_segment.h"
+bool run()
+{
+    // Базовая поверхность - цилиндрическая поверхность, построенная по трем точкам
+    // Центр локальной СК цилиндра (центр основания)
+    const MbCartPoint3D pс0( 0, 0, 0 );
+    // Вектор p0-p1 задает ось Z локальной СК и высоту цилиндра
+    const MbCartPoint3D pс1( 0, 10, 0 );
+    // Вектор p0-p2 задает ось X локальной СК и радиус основания
+    const MbCartPoint3D pс2( 5, 0, 0 );
+    MbCylinderSurface* pBaseSurf = new MbCylinderSurface( pс0, pс1, pс2 );
+    // Точки на поверхности цилиндра с координатами (u, v) для указания на нем
+    // равнобедренного треугольника.
+    // Параметр v отсчитывается по высоте цилиндра в диапазоне [0, 1].
+    // Параметр u отсчитывается по окружности цилиндра в диапазоне [0, 2*M_PI].
+    // Координаты точек выбраны так, чтобы высота треугольника составляла половину
+    // цилиндра (с отступами по четверти высоты от краев).
+    // Длина основания треугольника составляет M_PI/2, т.е., четверть
+    // от окружности цилиндра.
+    MbCartPoint p1(M_PI/4, 0.25), p2(M_PI/4 + M_PI/2, 0.25), p3(M_PI/4 + M_PI/4, 0.75 );
+    MbLineSegment* pSeg1 = new MbLineSegment( p1, p3 );
+    MbLineSegment* pSeg2 = new MbLineSegment( p3, p2 );
+    MbLineSegment* pSeg3 = new MbLineSegment( p2, p1 );
+    // Стороны треугольника объединяются в замкнутый контур.
+    MbContour* pContourTriangle = new MbContour();
+    pContourTriangle->AddSegment( pSeg1 );
+    pContourTriangle->AddSegment( pSeg2 );
+    pContourTriangle->AddSegment( pSeg3 );
+    // Построение пространственной кривой "Контур на поверхности" с указанием в качестве
+    // базовой поверхности цилиндра pBaseSurf
+    MbContourOnSurface* pContourOnCyl = new MbContourOnSurface(
+    *pBaseSurf, *pContourTriangle, false );
+    // Построение поверхности, ограниченной кривыми
+    MbCurveBoundedSurface* pSurf = new MbCurveBoundedSurface( *pBaseSurf );
+    // В качестве кривых указываются две границы: внешний контур поверхности и
+    // внутренний треугольный контур pContourOnCyl
+    pSurf->AddOuterContour();
+    pSurf->AddCurve( *pContourOnCyl );
+    pSurf->CalculateUVLimits();
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf );
+    // Отображение контуров, ограничивающих поверхность
+    for (int i = 0; i<pSurf->GetCurvesCount(); i++)
+    show(Style(5, LIGHTRED), (MbSpaceItem*)(pSurf->GetCurve(i)) );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pBaseSurf );
+    ::DeleteItem( pSurf );
+    ::DeleteItem( pSeg1 );
+    ::DeleteItem( pSeg2 );
+    ::DeleteItem( pSeg3 );
+    ::DeleteItem( pContourTriangle );
+    ::DeleteItem( pContourOnCyl );
+    return true;
+}
+[end]
+[id = "code_block_29"]
+[begin]
+#include "setup.h"
+#include "surf_mesh_surface.h" // MbMeshSurface - сеточная поверхность
+#include "cur_bezier3d.h"
+bool run()
+{
+    // Первое семейство координатных кривых:
+    // - кривые Безье, представляющие два периода синусоиды (растянутые
+    // на отрезок U_SIN_DX).
+    // - U_CURVES_CNT кривых расположены вдоль оси Z на равных промежутках
+    // в интервале шириной U_DZ
+    const int U_CURVES_CNT = 10;
+    const double U_DZ = 30;
+    const int U_SIN_PERIOD_CNT = 2;
+    const double U_SIN_DX = 15;
+    const int U_BEZIER_PNT_CNT = 15;
+    RPArray<MbCurve3D> arrCurvesU;
+    for (int i = 0; i < U_CURVES_CNT; i++)
+    {
+    SArray<MbCartPoint3D> arrPnts;
+    for (int n = 0; n < U_BEZIER_PNT_CNT; n++)
+    {
+    MbCartPoint3D p;
+    p.x = n * U_SIN_DX/(U_BEZIER_PNT_CNT - 1);
+    p.y = sin( p.x/U_SIN_DX * 2*M_PI*U_SIN_PERIOD_CNT );
+    p.z = i * U_DZ/(U_CURVES_CNT - 1);
+    arrPnts.push_back( p );
+    }
+    MbBezier3D* pc = MbBezier3D::Create( arrPnts, false );
+    arrCurvesU.Add( pc );
+    }
+    // Второе семейство координатных кривых:
+    // - кривые Безье, представляющие три периода синусоиды (растянутые
+    // на отрезок V_SIN_DZ).
+    // - V_CURVES_CNT кривых расположены вдоль оси X на равных промежутках
+    // в интервале шириной V_DX
+    const int V_CURVES_CNT = 5;
+    const double V_DX = U_SIN_DX;
+    const int V_SIN_PERIOD_CNT = 3;
+    const double V_SIN_DZ = U_DZ;
+    const int V_BEZIER_PNT_CNT = 15;
+    RPArray<MbCurve3D> arrCurvesV;
+    for (int i = 0; i < V_CURVES_CNT; i++)
+    {
+    SArray<MbCartPoint3D> arrPnts;
+    for (int n = 0; n < V_BEZIER_PNT_CNT; n++)
+    {
+    MbCartPoint3D p;
+    p.x = i * V_DX/(V_CURVES_CNT - 1);
+    p.z = n * V_SIN_DZ/(V_BEZIER_PNT_CNT - 1);
+    p.y = sin( p.z/V_SIN_DZ * 2*M_PI*V_SIN_PERIOD_CNT );
+    arrPnts.push_back( p );
+    }
+    MbBezier3D* pc = MbBezier3D::Create( arrPnts, false );
+    arrCurvesV.Add( pc );
+    }
+    // Построение поверхности
+    MbMeshSurface* pSurf = new MbMeshSurface( arrCurvesU, arrCurvesV,
+    false, false, false );
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf );
+    // Отображение координатных кривых
+    for (int i = 0, iLim=arrCurvesU.size(); i < iLim; i++)
+    show(Style(5, LIGHTRED), arrCurvesU[i] );
+    for (int i = 0, iLim=arrCurvesV.size(); i < iLim; i++)
+    show(Style(5, LIGHTBLUE), arrCurvesV[i] );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSurf );
+
+    for (int i = 0, iLim=arrCurvesU.size(); i < iLim; i++)
+      ::DeleteItem( arrCurvesU[i] );
+
+    for (int i = 0, iLim=arrCurvesV.size(); i < iLim; i++)
+      ::DeleteItem( arrCurvesV[i] );
+
+    return true;
+}
+[end]
+[id = "code_block_30"]
+[begin]
+#include "setup.h"
+// MbOffsetSurface - эквидистантная поверхность для некоторой базовой поверхности
+#include "surf_offset_surface.h"
+// MbRevolutionSurface - поверхность вращения
+#include "surf_revolution_surface.h"
+// MbAxis3D - ось в трехмерном пространстве (вектор с закрепленной начальной точкой)
+#include "mb_axis3d.h"
+#include "cur_bezier3d.h"
+bool run()
+{
+    // Базовая поверхность вращения: построение по образующей, оси вращения и углу
+    SArray<MbCartPoint3D> arrGenPnts(7);
+    arrGenPnts.Add(MbCartPoint3D(2.5, 20, 0));
+    arrGenPnts.Add(MbCartPoint3D(4, 10, 0));
+    arrGenPnts.Add(MbCartPoint3D(9.7, 7.4, 0));
+    arrGenPnts.Add(MbCartPoint3D(9.7, 4, 0));
+    arrGenPnts.Add(MbCartPoint3D(7.6, 2.2, 0));
+    arrGenPnts.Add(MbCartPoint3D(10, -7, 0));
+    arrGenPnts.Add(MbCartPoint3D(9.8, -11, 0));
+    MbBezier3D* pGenCurve = MbBezier3D::Create( arrGenPnts, false );
+    MbAxis3D axRev( MbCartPoint3D(0,0,0), MbVector3D(0, 1, 0) );
+    MbRevolutionSurface* pBaseSurf = new MbRevolutionSurface(
+    *pGenCurve, axRev, 2*M_PI, false );
+    // Построение эквидистантной поверхности
+    MbOffsetSurface* pOffSurf = new MbOffsetSurface(*pBaseSurf, 5, false );
+    // Смещение pOffSurf вдоль оси X для удобства отображения
+    pOffSurf->Move(MbVector3D(45, 0, 0));
+    // Отображение поверхностей
+    show(Style(1, GREEN), pBaseSurf);
+    show(Style(1, LIGHTGRAY), pOffSurf );
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem( pGenCurve);
+    ::DeleteItem( pBaseSurf );
+    ::DeleteItem( pOffSurf );
+    return true;
+}
+[end]

@@ -1,0 +1,96 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let Exercice7 = () => {
+
+            let arr = [{
+                    id: 2,
+                    name: "Организация",
+                    parent_id: null
+                },
+                {
+                    id: 3,
+                    name: "Бухгалтерия",
+                    parent_id: 2
+                },
+                {
+                    id: 6,
+                    name: "Отдел охраны",
+                    parent_id: 2
+                },
+                {
+                    id: 7,
+                    name: "Караульная служба",
+                    parent_id: 6
+                },
+                {
+                    id: 8,
+                    name: "Бюро пропусков",
+                    parent_id: 6
+                },
+                {
+                    id: 12,
+                    name: "Патентный отдел",
+                    parent_id: 2
+                },
+                {
+                    id: 13,
+                    name: "Лётная служба",
+                    parent_id: 2
+                },
+                {
+                    id: 14,
+                    name: "Лётный отряд Боинг 737",
+                    parent_id: 13
+                },
+                {
+                    id: 17,
+                    name: "Лётный отряд Боинг 747",
+                    parent_id: 13
+                },
+                {
+                    id: 18,
+                    name: "1-ая авиационная эксадрилия Боинг 737",
+                    parent_id: 14
+                },
+                {
+                    id: 19,
+                    name: "2-ая авиационная эскадрилия Боинг 737",
+                    parent_id: 14
+                },
+                {
+                    id: 21,
+                    name: "Лётно-методический отдел",
+                    parent_id: 13
+                }
+            ];
+
+            let level = 0;
+
+            function find(parent, level) {
+                level++;
+                for (let i = 0; i < arr.length; i++) {
+                    if (arr[i].parent_id === parent) {
+                        for (let i = 0; i < level; i++) {
+                            document.write('■');
+                        }
+                        document.write(arr[i].name + '<br>');
+                        find(arr[i].id, level);
+                    }
+                }
+            }
+            find(null, level);
+        }
+        Exercice7();
+    </script>
+</body>
+
+</html>

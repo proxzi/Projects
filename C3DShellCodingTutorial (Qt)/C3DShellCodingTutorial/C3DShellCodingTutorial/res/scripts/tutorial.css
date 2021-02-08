@@ -1,0 +1,56 @@
+body{
+  max-width: none;
+}
+
+h1, h2, h3, h4 {
+  color: #292121;
+}
+
+ul li {
+  margin-left: 40px;
+}
+
+ol li {
+  margin-left: 40px;
+  text-align: justify;
+}
+
+pre {
+  max-width: none;
+  white-space: pre-wrap;
+}
+
+.table {
+/*  width : 540px;*/
+/*  max-height : 500px;*/
+  overflow : auto; 
+  border : solid 1px black;
+  font-size : 13px;  
+}
+
+p, ul, ol {
+  max-width: none;
+  text-align: justify;
+
+}
+
+table {
+  background : black;
+  border-spacing : 1px;
+}
+
+.button {
+  text-align: center;
+}
+
+th, td {
+  background: white;
+  padding: 5px;
+}
+
+img {
+  max-width: 800px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}

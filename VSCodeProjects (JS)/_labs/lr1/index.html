@@ -1,0 +1,48 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let Exercice1 = (dayWas, dayPass) => {
+            getNum = (n, words) => words[(n % 10 === 1 && n % 100 !== 11) ? 0 : n % 10 >= 2 && n % 10 <= 4 && (n %
+                100 < 12 || n % 100 > 14) ? 1 : 2];
+
+            let dayRest = Number(dayWas) - Number(dayPass);
+
+            return getNum(dayRest, ["Остался ", "Осталось ", "Осталось "]) + dayRest + getNum(dayRest, [" день.",
+                " дня.", " дней."
+            ]);
+        }
+
+        let Exercice2 = () => {
+            for (var i = 1; i < 10; i++) {
+                let str = new String;
+                for (var j = 1; j < 10; j++)
+                    str += i * j + " ";
+                console.log(str);
+            }
+        }
+
+        let Exercice3 = () => {
+            while (true) {
+                var nameStr = prompt("Введите своё имя");
+                if (nameStr !== null && nameStr !== "")
+                    if (confirm("Вас зовут " + nameStr))
+                        break;
+            }
+            return nameStr;
+        }
+
+        //document.write(Exercice1(200, 105));
+        //Exercice2();
+        document.write(Exercice3());
+    </script>
+</body>
+
+</html>

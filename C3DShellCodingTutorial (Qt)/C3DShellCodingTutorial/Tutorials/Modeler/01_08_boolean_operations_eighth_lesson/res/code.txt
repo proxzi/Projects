@@ -1,0 +1,535 @@
+[id = "code_block_1"]
+[begin]
+#include "setup.h"
+#include "action_solid.h" 
+using namespace c3d;
+
+bool run()
+{   
+	// Исходные тела - цилиндры
+	MbSolid *pCyl1 = NULL, *pCyl2 = NULL;  
+ 
+	// Объект-именователь для построения цилиндров - элементарных тел
+	MbSNameMaker cylNames(ct_ElementarySolid, MbSNameMaker::i_SideNone); 
+
+	// Массив точек для построения первого цилиндра   
+	SArray<MbCartPoint3D> pntsCyl1(3);
+	pntsCyl1.Add(MbCartPoint3D(0, 50, 0));
+	pntsCyl1.Add(MbCartPoint3D(0, 50, 100));
+	pntsCyl1.Add(MbCartPoint3D(25, 50, 0));  
+
+	// Построение элементарного тела - цилиндра - по трем точкам
+	ElementarySolid( pntsCyl1, et_Cylinder, cylNames, pCyl1 );  
+
+	// Массив точек для построения второго цилиндра
+	SArray<MbCartPoint3D> pntsCyl2(3);
+	pntsCyl2.Add(MbCartPoint3D(25, 0, 50));
+	pntsCyl2.Add(MbCartPoint3D(25, 100, 50));
+	pntsCyl2.Add(MbCartPoint3D(50, 0, 50));  
+
+	// Построение второго цилиндра
+	ElementarySolid(pntsCyl2, et_Cylinder, cylNames, pCyl2);  
+
+	// Именователь граней для построения тела с помощью булевой операции 
+	MbSNameMaker operBoolNames( ct_BooleanSolid, MbSNameMaker::i_SideNone ); 
+
+	// Флаги булевой операции: построение замкнутого тела с объединением
+	// подобных граней и ребер.
+	MbBooleanFlags flagsBool;
+	flagsBool.InitBoolean(true);
+	flagsBool.SetMergingFaces(true);
+	flagsBool.SetMergingEdges(true); 
+
+	// Результирующее тело
+    MbSolid* pSolid = NULL;
+	// Вызов булевой операции для выполнения объединения.
+	// Для выполнения вычитания надо вместо типа операции bo_Union указать
+    // значение bo_Difference, для пересечения - значение bo_Intersect.
+	MbResultType res = ::BooleanResult( *pCyl1, cm_Copy, *pCyl2, cm_Copy, bo_Union,
+										flagsBool, operBoolNames, pSolid );  
+
+	// Отображение результирующего тела
+	if ( res == rt_Success )
+		show(RED, pSolid); 
+
+	// Уменьшение счетчиков ссылок исходных тел
+	/*
+	::DeleteItem( pCyl1 );
+	::DeleteItem( pCyl2 );
+	*/
+	return true;
+}
+[end]
+[id = "code_block_2"]
+[begin]
+#include "setup.h"
+#include "action_solid.h" 
+using namespace c3d;
+bool run()
+{
+	// Исходные тела - прямоугольные параллелепипеды
+	MbSolid *pBlock1 = NULL, *pBlock2 = NULL;
+	
+	// Объект-именователь для построения элементарных тел
+	MbSNameMaker blockNames(ct_ElementarySolid, MbSNameMaker::i_SideNone);
+	// Массив из 4-х опорных точек для построения прямоугольного
+	// параллелепипеда как элементарного тела - блока.
+	SArray<MbCartPoint3D> pntsBlock1(4);
+	pntsBlock1.Add(MbCartPoint3D(0, 0, 0));
+	pntsBlock1.Add(MbCartPoint3D(0, 0, 200));
+	pntsBlock1.Add(MbCartPoint3D(50, 0, 0));
+	pntsBlock1.Add(MbCartPoint3D(0, 50, 0));
+	// Построение элементарного тела-блока по опорным точкам
+	ElementarySolid(pntsBlock1, et_Block, blockNames, pBlock1);
+	
+	// Массив опорных точек для второго параллелепипеда
+	SArray<MbCartPoint3D> pntsBlock2(4);
+	pntsBlock2.Add(MbCartPoint3D(0, 0, 200));
+	pntsBlock2.Add(MbCartPoint3D(100, 0, 200));
+	pntsBlock2.Add(MbCartPoint3D(0, 0, 150));
+	pntsBlock2.Add(MbCartPoint3D(0, 50, 200));
+	// Построение второго блока по опорным точкам
+	ElementarySolid(pntsBlock2, et_Block, blockNames, pBlock2);
+	
+	// Именователь граней для построения тела с помощью булевой операции
+	MbSNameMaker operBoolNames( ct_BooleanSolid, MbSNameMaker::i_SideNone );
+
+	// Флаги булевой операции: построение замкнутого тела с объединением
+	// подобных граней и ребер.
+	MbBooleanFlags flagsBool;
+	flagsBool.InitBoolean(true);
+	flagsBool.SetMergingFaces(true);
+	flagsBool.SetMergingEdges(true);
+
+	// Результирующее тело
+	MbSolid* pSolid = NULL;
+	// Вызов булевой операции для выполнения объединения.
+	MbResultType res = ::BooleanResult( *pBlock1, cm_Copy, *pBlock2, cm_Copy, bo_Union,
+										flagsBool, operBoolNames, pSolid );
+
+	// Отображение результирующего тела
+	if ( res == rt_Success )
+		show(BLUE, pSolid);
+	
+	// Уменьшение счетчиков ссылок исходных тел
+	/*
+	::DeleteItem(pBlock1);
+	::DeleteItem(pBlock2);
+	*/
+	
+	return true;
+}
+[end]
+[id = "code_block_3"]
+[begin]
+#include "setup.h"
+#include "action_solid.h"
+#include <cur_arc.h>
+using namespace c3d;
+bool run()
+{
+	// Множитель для преобразования углов из градусной в радианную меру.
+	const double DEG_TO_RAD = M_PI / 180.0;
+
+	// ШАГ 1: ПЕРВОЕ ТЕЛО ДЛЯ БУЛЕВОЙ ОПЕРАЦИИ: ПРЯМОУГОЛЬНЫЙ ПАРАЛЛЕЛЕПИПЕД
+	MbSolid* pBlockSolid = NULL;
+
+	// Опорные точки для построения элементарного-тела блока
+	SArray<MbCartPoint3D> pntsBlock(4);
+	pntsBlock.Add(MbCartPoint3D(200, -10, 0));
+	pntsBlock.Add(MbCartPoint3D(-200, -10, 0));
+	pntsBlock.Add(MbCartPoint3D(200, -10, 20));
+	pntsBlock.Add(MbCartPoint3D(200, 10, 0));
+	// Объект-именователь для построения элементарных тел
+	MbSNameMaker blockNames(ct_ElementarySolid, MbSNameMaker::i_SideNone);
+	// Создание элементарного тела - блока по четырем точкам
+	::ElementarySolid(pntsBlock, et_Block, blockNames, pBlockSolid);
+
+	// ШАГ 2: ВТОРОЕ ТЕЛО ДЛЯ БУЛЕВОЙ ОПЕРАЦИИ: ПОЛОВИНА ТОРА С КРУГОВЫМ СЕЧЕНИЕМ
+	MbSolid* pHalfTorSolid = NULL;
+
+	// Контур-образующая для тела вращения
+	MbArc* pArc2D = new MbArc(15);
+	pArc2D->Move(MbVector(MbCartPoint(0,0), MbCartPoint(-40,0)));
+	MbContour* pCircleContour = new MbContour();
+	pCircleContour->AddSegment(pArc2D);
+	// Объект, хранящий параметры образующей тела вращения
+	MbPlacement3D pl;
+	MbSweptData sweptData(pl, *pCircleContour);
+	// Объект с параметрами операции вращения (углы вращения по и против направления
+	// нормали поверхности контура)
+	RevolutionValues revParams(180*DEG_TO_RAD, 0, 0);
+	// Объект-именователь для построения тела вращения
+	MbSNameMaker revNames(ct_CurveRevolutionSolid, MbSNameMaker::i_SideNone, 0);
+	PArray<MbSNameMaker> revContoursNames(0, 1, false);
+	// Ось вращения для построения тела - ось Y мировой СК
+	MbAxis3D axis(pl.GetAxisY());
+	axis.Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(40, 0, 0)));
+	// Построение твердого тела вращения
+	::RevolutionSolid( sweptData, axis, revParams, revNames,
+		revContoursNames, pHalfTorSolid );
+
+	// ШАГ 3: БУЛЕВА ОПЕРАЦИЯ ВЫЧИТАНИЯ ТОРА ИЗ ПАРАЛЛЕЛЕПИПЕДА
+	// Именователь граней для построения тела с помощью булевой операции
+	MbSNameMaker operBoolNames(ct_BooleanSolid, MbSNameMaker::i_SideNone, 0);
+
+	// Флаги операции: построение замкнутого тела с объединением подобных граней и ребер
+	MbBooleanFlags flagsBool;
+	flagsBool.InitBoolean(true);
+	// Булева операция над оболочками
+	flagsBool.SetMergingFaces(true);
+	// Сливать подобные грани
+	flagsBool.SetMergingEdges(true);
+	// Сливать подобные ребра
+
+	// Выполнение булевой операции вычитания: pSolid = pBlockSolid - pHalfTorSolid
+	MbSolid* pSolid = NULL;
+	MbResultType resBoolOp = ::BooleanResult(
+		*pBlockSolid, cm_Copy, *pHalfTorSolid, cm_Copy,
+		bo_Difference, flagsBool, operBoolNames, pSolid );
+	// Следующие закомментированные строки позволяют отобразить результирующее
+	// тело до разделения (как на рис. 14).
+	// if ( resBoolOp == rt_Success )
+	//   show(BLUE, pSolid);
+
+	// ШАГ 4: РАЗДЕЛЕНИЕ СЛОЖНОГО НЕСВЯЗНОГО ТЕЛА НА ЧАСТИ
+	// Массив, для хранения тел, представляющих отдельные части тела pSolid.
+	// Исходное тело pSolid состоит из трех частей, но при использовании DetachParts
+	// наибольшая будет сохранена вместо исходного тела, а не в массиве частей.
+	PArray<MbSolid> parts(2		/* Начальный размер массива */,
+		2	/* Приращение при увеличении массива - здесь неважно */,
+		false /* При удалении массива его элементы удалять не надо */);
+	// Именователь операции разделения тела на части
+	MbSNameMaker detachNames(ct_DetachSolid, MbSNameMaker::i_SideNone, 0);
+	// Операция разделения тела: sort = true задает сортировку частей по габаритному
+	// размеру, наибольшая часть помещается в pSolid, две остальные - в массив parts.
+	size_t partsCnt = ::DetachParts(*pSolid, parts, true, detachNames );
+
+	// Отображение тел – частей (рис. 15) с проверкой, что были успешно получены
+	// две части (DetachParts возвращает количество частей в массиве parts и в этом 
+	// значении не учитывает наибольшую часть pSolid).
+	if ( partsCnt == 2 )
+	{     
+	// Часть с наибольшим габаритом, заместившая исходное тело pSolid,
+	// отображается красным цветом.
+	show( Style( 1, RGB(255, 0, 0) ), pSolid); 
+
+	// Части с меньшими размерами, помещенные в массив тел parts, для отображения
+	// смещаются на 50 и 100 по оси Y и отображаются зеленым и синим цветом.
+	parts[0]->Move( MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 50, 0)) );
+	show( Style( 1, RGB(0, 255, 0) ), parts[0]);
+	parts[1]->Move( MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 100, 0)) );
+	show( Style( 1, RGB(0, 0, 255) ), parts[1]);
+	}
+
+	// Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem( pBlockSolid );
+	::DeleteItem( pArc2D );
+	::DeleteItem( pCircleContour );
+	::DeleteItem( pHalfTorSolid );
+	*/
+	return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"
+#include "action_solid.h"
+bool run()
+{
+	// Именователь операции построения элементарного тела
+	MbSNameMaker namesElSolid(ct_ElementarySolid, MbSNameMaker::i_SideNone, 0); 
+
+	// ИСХОДНОЕ ТЕЛО №1 - ПАРАЛЛЕЛЕПИПЕД
+	MbSolid* pBlockSolid = NULL;
+	// Опорные точки для построения элементарного тела - блока
+	SArray<MbCartPoint3D> blockPnts(4);
+	blockPnts.Add(MbCartPoint3D(150, 150, 0));
+	blockPnts.Add(MbCartPoint3D(0, 150, 0));
+	blockPnts.Add(MbCartPoint3D(150, 150, 40));
+	blockPnts.Add(MbCartPoint3D(150, 250, 0));
+	// Построение элементарного тела - блока
+	MbResultType resBlock = ::ElementarySolid( blockPnts, et_Block,
+		namesElSolid, pBlockSolid );
+
+	// ИСХОДНОЕ ТЕЛО №2 - ЦИЛИНДР
+	MbSolid* pCyl1_Solid = NULL;
+	// Опорные точки для элементарного тела - цилиндра
+	SArray<MbCartPoint3D> cylPnts(3);
+	cylPnts.Add(MbCartPoint3D(30, 50, 0));
+	cylPnts.Add(MbCartPoint3D(30, 50, 50));
+	cylPnts.Add(MbCartPoint3D(40, 50, 0));
+	// Построение элементарного тела - цилиндра
+	MbResultType resCyl1 = ::ElementarySolid( cylPnts, et_Cylinder,
+		namesElSolid, pCyl1_Solid);
+
+	// ИСХОДНОЕ ТЕЛО №3 - ЦИЛИНДР
+	// Построим второй цилиндр как копию pCyl1_Solid, смещенную вдоль оси Y.
+	MbSolid* pCyl2_Solid = (MbSolid*)(&pCyl1_Solid->Duplicate());
+	pCyl2_Solid->Move( MbVector3D(0, 30, 0 ) );
+
+	// ИСХОДНОЕ ТЕЛО №4 - КОНУС
+	MbSolid* pConeSolid = NULL;
+	SArray<MbCartPoint3D> conePnts(3);
+	// Массив точек
+	conePnts.Add(MbCartPoint3D(100, 50, 0));
+	conePnts.Add(MbCartPoint3D(100, 50, 50));
+	conePnts.Add(MbCartPoint3D(130, 50, 50));
+	MbResultType resCone = ::ElementarySolid( conePnts, et_Cone,
+	namesElSolid, pConeSolid );
+
+	// При необходимости - отображение исходных тел (для получения рис.19)
+	/*
+		if ( pBlockSolid )
+		show( BLUE, pBlockSolid );
+		if ( pCyl1_Solid )
+		show( BLUE, pCyl1_Solid );
+		if ( pCyl2_Solid )
+		show( BLUE, pCyl2_Solid );
+		if ( pConeSolid )
+		show( BLUE, pConeSolid );
+	*/
+
+	// ОБЪЕДИНЕНИЕ ДВУХ ЦИЛИНДРОВ И КОНУСА В СЛОЖНОЕ СОСТАВНОЕ ТЕЛО
+	MbSolid* pUnionSolid = NULL;
+	// Именователь операции объединения
+	MbSNameMaker operUnionNames(ct_UnionSolid, MbSNameMaker::i_SideNone, 0);
+	// Режим проверки на пересечение
+	bool checkIntersection = true;
+	// Признак регулярности расположения исходных тел
+	bool isArray = false;
+	// Массив тел для объединения
+	RPArray<MbSolid> solids;
+	solids.Add(pCyl1_Solid);
+	solids.Add(pCyl2_Solid);
+	solids.Add(pConeSolid);
+	// Объединение массива тел
+	MbResultType resUnion = ::UnionSolid( solids, cm_Same, checkIntersection,
+	operUnionNames, isArray, pUnionSolid );
+	// Перемещение тела "Два цилиндра + конус" по оси Y
+	pUnionSolid->Move( MbVector3D(0, 150, 0) );
+
+	// Отображение составного тела после перемещения вместе с
+	// параллелепипедом (для получения рис. 20).
+	// show( BLUE, pUnionSolid );
+	// show( BLUE, pBlockSolid );
+
+	// ВЫЧИТАНИЕ СОСТАВНОГО ТЕЛА "ДВА ЦИЛИНДРОВ + КОНУС" ИЗ ПАРАЛЛЕЛЕПИПЕДА
+	MbSolid* pBoolSolid = NULL;
+	// Именователь граней булевой операции
+	MbSNameMaker operBoolNames(ct_BooleanSolid, MbSNameMaker::i_SideNone, 0);
+	// Флаги булевой операции: построение замкнутого тела с объединением
+	// подобных граней и ребер.
+	MbBooleanFlags flagsBool;
+	flagsBool.InitBoolean(true);
+	// Булева операция над оболочками
+	flagsBool.SetMergingFaces(true);
+	// Объединять подобные грани
+	flagsBool.SetMergingEdges(true);
+	// Объединять подобные ребра
+	// Операция вычитания из параллелепипеда составного тела "Два цилиндра + конус"
+	MbResultType res = ::BooleanResult( *pBlockSolid, cm_Copy, *pUnionSolid, cm_Copy,
+		bo_Difference, flagsBool, operBoolNames, pBoolSolid );
+
+	// Отображение тела - результата вычитания
+	show( BLUE, pBoolSolid );
+
+	// Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pBlockSolid);
+	::DeleteItem(pCyl1_Solid);
+	::DeleteItem(pCyl1_Solid);
+	::DeleteItem(pConeSolid);
+	::DeleteItem(pUnionSolid);
+	::DeleteItem(pBoolSolid);
+	*/
+	return true;
+}
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"
+#include "action_solid.h" 
+bool run()
+{
+	// Именователь операции построения элементарного тела
+	MbSNameMaker namesElSolid(ct_ElementarySolid, MbSNameMaker::i_SideNone, 0);
+	// ИСХОДНОЕ ТЕЛО ДЛЯ КОПИРОВАНИЯ - ЦИЛИНДР
+	MbSolid* pCylSolid = NULL;
+	// Опорные точки для элементарного тела - цилиндра
+	SArray<MbCartPoint3D> cylPnts(3);
+	cylPnts.Add( MbCartPoint3D( 0, 0,  0) );
+	cylPnts.Add( MbCartPoint3D( 0, 0, 50) );
+	cylPnts.Add( MbCartPoint3D(10, 0,  0) );
+	// Построение элементарного тела - цилиндра
+	MbResultType resCyl1 = ::ElementarySolid( cylPnts, et_Cylinder,
+	namesElSolid, pCylSolid );  
+
+	// ФОРМИРОВАНИЕ ОБЪЕКТА params С ПАРАМЕТРАМИ ОПЕРАЦИИ КОПИРОВАНИЯ ПО СЕТКЕ
+	// Векторы, определяющие два направления копирования
+	MbVector3D vecDir1( MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 100, 0) );
+	MbVector3D vecDir2( MbCartPoint3D(0, 0, 0), MbCartPoint3D(100, 0, 0) );
+	// Шаг копирования по двум осям
+	const double step1 = 50;
+	const double step2 = 50;
+	// Количество копий по двум направлениям
+	const unsigned int num1 = 5;
+	const unsigned int num2 = 7;
+	// В качестве центра СК сетки передается точка, соответствующая центру одного из
+	// оснований исходного цилиндра.
+	DuplicationMeshValues params( false /* декартова СК */ , vecDir1, step1, num1,
+	vecDir2, step2, num2, &cylPnts[0] ); 
+
+	// ПОСТРОЕНИЕ ТЕЛА, СОСТОЯЩЕГО ИЗ КОПИЙ ПО СЕТКЕ
+	MbSolid* pDuplSolid = NULL;
+	// Именователь операции копирования по сетке
+	MbSNameMaker namesDupl(ct_DuplicationSolid, MbSNameMaker::i_SideNone, 0);
+	// Вызов операции копирования по сетке
+	MbResultType res = ::DuplicationSolid( *pCylSolid, params, namesDupl, pDuplSolid );
+
+	// Отображение результирующего составного тела
+	if ( res == rt_Success )
+	show(BLUE, pDuplSolid);
+
+	// Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem( pCylSolid );
+	::DeleteItem( pDuplSolid );
+	*/
+	return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+#include "action_solid.h" 
+bool run()
+{
+	// Множитель для преобразования углов из градусной в радианную меру.
+	const double DEG_TO_RAD = M_PI / 180.0; 
+
+	// Именователь операции построения элементарного тела
+	MbSNameMaker namesElSolid(ct_ElementarySolid, MbSNameMaker::i_SideNone, 0);
+
+	// ИСХОДНОЕ ТЕЛО ДЛЯ КОПИРОВАНИЯ - СФЕРА
+	MbSolid* pSphereSolid = NULL;
+	// Опорные точки для элементарного тела - сферы
+	SArray<MbCartPoint3D> sphPnts(3);
+	sphPnts.Add( MbCartPoint3D( 0, 0,  0) );
+	sphPnts.Add( MbCartPoint3D( 0, 0, 10) );
+	sphPnts.Add( MbCartPoint3D(10, 0,  0) );
+	// Построение элементарного тела - сферы
+	::ElementarySolid( sphPnts, et_Sphere, namesElSolid, pSphereSolid );  
+
+	// ФОРМИРОВАНИЕ ОБЪЕКТА params С ПАРАМЕТРАМИ ОПЕРАЦИИ КОПИРОВАНИЯ ПО СЕТКЕ
+	// Векторы, определяющие полярную СК - направление радиальной оси и
+	// направление увеличения полярного угла.
+	MbVector3D vecDir1( MbCartPoint3D(0, 0, 0), MbCartPoint3D(100, 0, 0) );
+	MbVector3D vecDir2( MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, -100, 0) );
+	// Шаг копирования
+    const double step1 = 50;
+	const double step2 = 30.0*DEG_TO_RAD;
+	// Угловой шаг 30 градусов
+	// Задание количества копий
+	unsigned int num1 = 5;
+	unsigned int num2 = 12;
+	// В качестве центра СК сетки передается точка, соответствующая центру сферы.
+	DuplicationMeshValues params( true /* полярная СК */, vecDir1, step1, num1,
+	vecDir2, step2, num2, &sphPnts[0] ); 
+
+	// ПОСТРОЕНИЕ ТЕЛА, СОСТОЯЩЕГО ИЗ КОПИЙ ПО СЕТКЕ
+	MbSolid* pDuplSolid = NULL;
+	// Именователь операции копирования по сетке
+	MbSNameMaker namesDupl(ct_DuplicationSolid, MbSNameMaker::i_SideNone, 0);
+	// Вызов операции копирования по сетке
+	MbResultType res = ::DuplicationSolid(*pSphereSolid, params, namesDupl, pDuplSolid);
+
+	// Отображение результирующего составного тела
+	if ( res == rt_Success )
+	show(BLUE, pDuplSolid); 
+
+	// Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem( pSphereSolid );
+	::DeleteItem( pDuplSolid );
+	*/
+	return true;
+}
+[end]
+[id = "code_block_7"]
+[begin]
+#include "setup.h"
+#include "action_solid.h" 
+bool run()
+{
+	// Именователь операции построения элементарного тела
+	MbSNameMaker namesElSolid(ct_ElementarySolid, MbSNameMaker::i_SideNone, 0);
+
+	// Исходное тело - параллелепипед (из которого вычитаются остальные три тела)
+	MbSolid* pBlockSolid = NULL;
+	SArray<MbCartPoint3D> blockPnts(4);
+	blockPnts.Add(MbCartPoint3D(  0,  0,   0));
+	blockPnts.Add(MbCartPoint3D(  0,  0, 200));
+	blockPnts.Add(MbCartPoint3D(200,  0,   0));
+	blockPnts.Add(MbCartPoint3D(  0, 50,   0));
+	ElementarySolid(blockPnts, et_Block, namesElSolid, pBlockSolid);
+
+	// Исходное тело - цилиндр
+	MbSolid* pCylSolid = NULL;
+	SArray<MbCartPoint3D> cylPnts(3);
+	cylPnts.Add(MbCartPoint3D(175, 30, 175));
+	cylPnts.Add(MbCartPoint3D(175, 90, 175));
+	cylPnts.Add(MbCartPoint3D(195, 30, 175));
+	ElementarySolid(cylPnts, et_Cylinder, namesElSolid, pCylSolid);
+
+	// Исходное тело - конус
+	MbSolid* pConeSolid = NULL;
+	SArray<MbCartPoint3D> conePnts(3);
+	conePnts.Add(MbCartPoint3D(100, 75, 130));
+	conePnts.Add(MbCartPoint3D(100, 30, 130));
+	conePnts.Add(MbCartPoint3D(100, 30, 190));
+	ElementarySolid(conePnts, et_Cone, namesElSolid, pConeSolid);
+
+	// Исходное тело - параллелепипед меньшего размера
+	MbSolid * pBlockSmallSolid = NULL;
+	SArray<MbCartPoint3D> blockSmPnts(4);
+	blockSmPnts.Add(MbCartPoint3D(100, 30, 130));
+	blockSmPnts.Add(MbCartPoint3D(100, 30, 200));
+	blockSmPnts.Add(MbCartPoint3D(200, 30, 130));
+	blockSmPnts.Add(MbCartPoint3D(100, 50, 130));
+	ElementarySolid(blockSmPnts, et_Block, namesElSolid, pBlockSmallSolid);
+
+	// Массив объединяемых тел, которые будут вычитаться из pBlockSolid
+	RPArray<MbSolid> arrSolids(3);
+	arrSolids.Add(pCylSolid);
+	arrSolids.Add(pConeSolid);
+	arrSolids.Add(pBlockSmallSolid); 
+
+	// Выполнение булевой операции вычитания над pBlock и набором тел arrSolids
+	bool bMergeFaces = true;
+	// Режим объединения граней
+	MbSolid* pResultSolid = NULL;
+	MbResultType res = ::UnionResult( pBlockSolid, cm_Same, arrSolids, cm_Same,
+		bo_Difference, true, bMergeFaces,
+		MbSNameMaker(ct_UnionSolid, MbSNameMaker::i_SideNone, 0),
+		false, pResultSolid );
+	// Смещение и отображение тела (смещение выполняется для того,
+	// чтобы убедиться в корректности результирующего тела).
+	if ( res == rt_Success )
+	{
+	pResultSolid->Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(10, 0, 0)));
+	show(BLUE, pResultSolid);
+	}
+
+	// Уменьшение счетчиков ссылок исходных тел
+	/*
+	::DeleteItem(pBlockSolid);
+	::DeleteItem(pCylSolid);
+	::DeleteItem(pConeSolid);
+	::DeleteItem(pBlockSmallSolid);
+	::DeleteItem(pResultSolid);
+	*/
+	return true;
+}
+[end]

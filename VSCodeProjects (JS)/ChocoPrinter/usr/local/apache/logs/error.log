@@ -1,0 +1,26 @@
+[Mon Feb 08 20:00:55 2021] [warn] Init: Name-based SSL virtual hosts only work for clients with TLS server name indication support (RFC 4366)
+[Mon Feb 08 20:00:55 2021] [warn] pid file Z:/usr/local/apache/logs/httpd.pid overwritten -- Unclean shutdown of previous Apache run?
+[Mon Feb 08 20:00:55 2021] [warn] Init: Name-based SSL virtual hosts only work for clients with TLS server name indication support (RFC 4366)
+[Mon Feb 08 20:00:55 2021] [notice] Apache/2.2.22 (Win32) mod_ssl/2.2.22 OpenSSL/1.0.1c PHP/5.2.12 configured -- resuming normal operations
+[Mon Feb 08 20:00:55 2021] [notice] Server built: Apr 20 2012 18:42:30
+[Mon Feb 08 20:00:55 2021] [notice] Parent: Created child process 13004
+[Mon Feb 08 20:00:55 2021] [notice] Disabled use of AcceptEx() WinSock2 API
+[Mon Feb 08 20:00:55 2021] [warn] Init: Name-based SSL virtual hosts only work for clients with TLS server name indication support (RFC 4366)
+[Mon Feb 08 20:00:56 2021] [warn] Init: Name-based SSL virtual hosts only work for clients with TLS server name indication support (RFC 4366)
+[Mon Feb 08 20:00:56 2021] [notice] Child 13004: Child process is running
+[Mon Feb 08 20:00:56 2021] [notice] Child 13004: Acquired the start mutex.
+[Mon Feb 08 20:00:56 2021] [notice] Child 13004: Starting 25 worker threads.
+[Mon Feb 08 20:00:56 2021] [notice] Child 13004: Listening on port 443.
+[Mon Feb 08 20:00:56 2021] [notice] Child 13004: Listening on port 8648.
+[Mon Feb 08 20:00:56 2021] [notice] Child 13004: Listening on port 443.
+[Mon Feb 08 20:00:56 2021] [notice] Child 13004: Listening on port 80.
+[Mon Feb 08 20:01:17 2021] [error] [client 127.0.0.1] File does not exist: Z:/home/Site/www/favicon.ico, referer: http://site/
+[Mon Feb 08 20:04:06 2021] [error] [client 127.0.0.1] File does not exist: Z:/home/test1.ru/www/favicon.ico, referer: http://test1.ru/
+[Mon Feb 08 20:06:59 2021] [error] [client 127.0.0.1] Invalid method in request \x16\x03\x01\x02
+[Mon Feb 08 20:06:59 2021] [error] [client 127.0.0.1] Invalid method in request \x16\x03\x01\x02
+[Mon Feb 08 20:07:10 2021] [notice] Parent: Received shutdown signal -- Shutting down the server.
+[Mon Feb 08 20:07:10 2021] [notice] Child 13004: Exit event signaled. Child process is ending.
+[Mon Feb 08 20:07:11 2021] [notice] Child 13004: Released the start mutex
+[Mon Feb 08 20:07:11 2021] [notice] Child 13004: All worker threads have exited.
+[Mon Feb 08 20:07:16 2021] [notice] Child 13004: Child process is exiting
+[Mon Feb 08 20:07:16 2021] [notice] Parent: Child process exited successfully.

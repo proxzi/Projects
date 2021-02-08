@@ -1,0 +1,612 @@
+[id = "code_block_1"]
+[begin]
+#include "setup.h"
+
+#include <vector>
+#include "alg_curve_fillet.h"
+#include "cur_nurbs3d.h"
+#include "action_solid.h"
+
+#include "cur_polyline.h"
+#include "surf_plane.h"
+
+using namespace std;
+using namespace c3d; 
+
+// Вспомогательная функция для построения образующей кривой
+// Содержимое этой функции из примера 6 "Построение твердого тела выдавливания" из работы №6.
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+    // Создание массива точек квадрата, к которому в дальнейшем добавятся скругления.
+    // Размер массива - 8 точек для учета точек четырех сегментов скруглений.
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add(MbCartPoint(0, 0));
+    arrPnts.Add(MbCartPoint(50, 0));
+    arrPnts.Add(MbCartPoint(50, 50));
+    arrPnts.Add(MbCartPoint(0, 50));
+
+    // Построение единой ломаной внешнего контура по точкам
+    MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+    MbContour* pContourPolyline = nullptr;
+
+    // Задание скругления с использованием функции FilletPolyContour
+    ::FilletPolyContour(pPolyline, 5, false, arrPnts[4], pContourPolyline);
+
+    // Задание индексов точек, в которых будет задаваться скругление с учетом
+    // добавления новой точки при скруглении с использованием функции FilletTwoSegments
+    ptrdiff_t idxSideRight1 = 0;
+    ptrdiff_t idxSideRight2 = 2;
+    ptrdiff_t idxSideRight3 = 4;
+
+    // Добавление скруглений
+    pContourPolyline->FilletTwoSegments(idxSideRight1, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight2, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight3, 5);
+
+    _arrContours.push_back(pContourPolyline);
+}
+
+bool run()
+{
+    // Локальная СК (по умолчанию совпадает с мировой СК)
+    MbPlacement3D pl;
+
+    // Массив контрольных точек для построения NURBS-сплайна
+    vector<MbCartPoint3D> vecPnts = 
+    {
+    {25, 0,   0}, 
+    {25, 40, -50}, 
+    {25, 10, -100},
+    {25, 80, -200}, 
+    {25, 30, -250}, 
+    {25, 0,  -300}
+   };
+    SArray<MbCartPoint3D> arrPnts(vecPnts);
+    // Построение направляющей кривой в виде незамкнутого NURBS-сплайна
+    // 4-го порядка по контрольным точкам
+    MbNurbs3D* pSpline = MbNurbs3D::Create(4, arrPnts, false);
+
+    // Описание образующей кривой в виде плоского контура на плоскости XY мировой СК
+    MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0),
+                                    MbCartPoint3D(0, 1, 0));
+
+    // Построение образующей кривой с помощью вспомогательной функции CreateSketch
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrContours);
+    MbSweptData sweptData(*pPlaneXY, arrContours);
+
+    // Объект с параметрами операции построения тела заметания
+    EvolutionValues params;
+    // Вариант плоскопараллельного движения образующей вдоль направляющей
+    params.parallel = 0;
+
+    // Служебные объекты-именователи для вызова геометрической операции
+    MbSNameMaker operNames(ct_CurveEvolutionSolid, MbSNameMaker::i_SideNone, 0);
+    MbSNameMaker cNames(ct_CurveSweptSolid, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> contourNames(1, 0, false);
+    contourNames.Add(&cNames);
+    MbSNameMaker splineNames(ct_CurveSweptSolid, MbSNameMaker::i_SideNone, 0);
+
+    // Вызов операции построения тела заметания
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::EvolutionSolid(sweptData, *pSpline, params, operNames,
+                                        contourNames, splineNames, pSolid);
+
+    // Отображение построенного тела
+    if(res == rt_Success)
+        show(Style(1, LIGHTGRAY), pSolid);
+
+    // Отображение направляющей кривой со смещением вдоль оси Y (в целях отображения,
+    // чтобы отображаемая кривая была смещена от поверхности тела).
+    pSpline->Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, -50, 0)));
+    show(Style(3, RGB(0, 0, 255)), pSpline);
+
+    // Уменьшение счетчиков ссылок объектов ядра
+    ::DeleteItem(pSolid);
+    ::DeleteItem(pPlaneXY);
+    ::DeleteItem(pSpline);
+
+    return true;
+}
+[end]
+[id = "code_block_2"]
+[begin] 
+#include "setup.h"
+
+#include <vector>
+#include "alg_curve_fillet.h"
+#include "cur_nurbs3d.h"
+#include "action_solid.h"
+
+#include "surf_plane.h"
+#include "cur_arc.h"
+
+using namespace std;
+using namespace c3d;
+
+// Вспомогательная функция для построения образующей кривой (для примера 1)
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+    // Построение образующей в виде двух концентрических окружностей
+    const double RAD_EXT = 35.0; // Радиус внешней окружности
+    const double RAD_INT = 15.0; // Радиус внутренней окружности
+
+    MbArc* pCircleExt = new MbArc(MbCartPoint(0,0), RAD_EXT);
+    MbArc* pCircleInt = new MbArc(MbCartPoint(0,0), RAD_INT);
+
+    _arrContours.push_back(new MbContour(*pCircleExt, true));
+    _arrContours.push_back(new MbContour(*pCircleInt, true));
+}
+
+bool run()
+{
+    // Локальная СК (по умолчанию совпадает с мировой СК)
+    MbPlacement3D pl;
+
+    // Массив контрольных точек для построения NURBS-сплайна
+    vector<MbCartPoint3D> vecPnts = 
+    {
+    {25, 0,   0}, 
+    {25, 40, -50}, 
+    {25, 10, -100},
+    {25, 80, -200}, 
+    {25, 30, -250}, 
+    {25, 0,  -300}
+   };
+    SArray<MbCartPoint3D> arrPnts(vecPnts);
+    // Построение направляющей кривой в виде незамкнутого NURBS-сплайна
+    // 4-го порядка по контрольным точкам
+    MbNurbs3D* pSpline = MbNurbs3D::Create(4, arrPnts, false);
+
+    // Описание образующей кривой в виде плоского контура на плоскости XY мировой СК
+    MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0),
+                                    MbCartPoint3D(0, 1, 0));
+
+    // Построение образующей кривой с помощью вспомогательной функции CreateSketch
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrContours);
+    MbSweptData sweptData(*pPlaneXY, arrContours);
+
+    // Объект с параметрами операции построения тела заметания
+    EvolutionValues params;
+    // Вариант плоскопараллельного движения образующей вдоль направляющей
+    params.parallel = 0;
+
+    // Расскомментировать для построения тонкостенного тела (рис 5(Справа))
+    // params.thickness1 = 5;
+    // params.thickness2 = 0;
+
+    // Служебные объекты-именователи для вызова геометрической операции
+    MbSNameMaker operNames(ct_CurveEvolutionSolid, MbSNameMaker::i_SideNone, 0);
+    MbSNameMaker cNames(ct_CurveSweptSolid, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> contourNames(1, 0, false);
+    contourNames.Add(&cNames);
+    MbSNameMaker splineNames(ct_CurveSweptSolid, MbSNameMaker::i_SideNone, 0);
+
+    // Вызов операции построения тела заметания
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::EvolutionSolid(sweptData, *pSpline, params, operNames,
+                                        contourNames, splineNames, pSolid);
+
+    // Отображение построенного тела
+    if(res == rt_Success)
+        show(Style(1, LIGHTGRAY), pSolid);
+
+    // Отображение направляющей кривой со смещением вдоль оси Y (в целях отображения,
+    // чтобы отображаемая кривая была смещена от поверхности тела).
+    pSpline->Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, -50, 0)));
+    show(Style(3, RGB(0, 0, 255)), pSpline);
+
+    // Уменьшение счетчиков ссылок объектов ядра
+    ::DeleteItem(pSolid);
+    ::DeleteItem(pPlaneXY);
+    ::DeleteItem(pSpline);
+
+    return true;
+}
+[end]
+[id = "code_block_3"]
+[begin] 
+#include "setup.h"
+
+#include <vector>
+#include "alg_curve_fillet.h"
+#include "cur_nurbs3d.h"
+#include "action_solid.h"
+
+#include "surf_plane.h"
+#include "cur_arc.h"
+
+using namespace std;
+using namespace c3d;
+
+// Вспомогательная функция для построения образующей кривой (для примера 1)
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+    // Построение образующей в виде четырех непересекающихся окружностей,
+    // радиусом RAD, центры которых лежат в вершинах квадрата со стороной SIDE.
+    const double RAD = 30.0;
+    const double SIDE = 100.0;
+
+    MbArc* pCircle1 = new MbArc(MbCartPoint(0,       0), RAD);
+    MbArc* pCircle2 = new MbArc(MbCartPoint(SIDE,    0), RAD);
+    MbArc* pCircle3 = new MbArc(MbCartPoint(SIDE, SIDE), RAD);
+    MbArc* pCircle4 = new MbArc(MbCartPoint(0,    SIDE), RAD);
+
+    _arrContours.push_back(new MbContour(*pCircle1, true));
+    _arrContours.push_back(new MbContour(*pCircle2, true));
+    _arrContours.push_back(new MbContour(*pCircle3, true));
+    _arrContours.push_back(new MbContour(*pCircle4, true));
+}
+
+bool run()
+{
+    // Локальная СК (по умолчанию совпадает с мировой СК)
+    MbPlacement3D pl;
+
+    // Массив контрольных точек для построения NURBS-сплайна
+    vector<MbCartPoint3D> vecPnts = 
+    {
+    {25, 0,   0}, 
+    {25, 40, -50}, 
+    {25, 10, -100},
+    {25, 80, -200}, 
+    {25, 30, -250}, 
+    {25, 0,  -300}
+   };
+    SArray<MbCartPoint3D> arrPnts(vecPnts);
+    // Построение направляющей кривой в виде незамкнутого NURBS-сплайна
+    // 4-го порядка по контрольным точкам
+    MbNurbs3D* pSpline = MbNurbs3D::Create(4, arrPnts, false);
+
+    // Описание образующей кривой в виде плоского контура на плоскости XY мировой СК
+    MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0),
+                                    MbCartPoint3D(0, 1, 0));
+
+    // Построение образующей кривой с помощью вспомогательной функции CreateSketch
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrContours);
+    MbSweptData sweptData(*pPlaneXY, arrContours);
+
+    // Объект с параметрами операции построения тела заметания
+    EvolutionValues params;
+    // Вариант плоскопараллельного движения образующей вдоль направляющей
+    params.parallel = 0;
+
+    // Расскомментировать для построения тонкостенного тела (рис 5(Справа))
+    // params.thickness1 = 5;
+    // params.thickness2 = 0;
+
+    // Служебные объекты-именователи для вызова геометрической операции
+    MbSNameMaker operNames(ct_CurveEvolutionSolid, MbSNameMaker::i_SideNone, 0);
+    MbSNameMaker cNames(ct_CurveSweptSolid, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> contourNames(1, 0, false);
+    contourNames.Add(&cNames);
+    MbSNameMaker splineNames(ct_CurveSweptSolid, MbSNameMaker::i_SideNone, 0);
+
+    // Вызов операции построения тела заметания
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::EvolutionSolid(sweptData, *pSpline, params, operNames,
+                                        contourNames, splineNames, pSolid);
+
+    // Отображение построенного тела
+    if(res == rt_Success)
+        show(Style(1, LIGHTGRAY), pSolid);
+
+    // Отображение направляющей кривой со смещением вдоль оси Y (в целях отображения,
+    // чтобы отображаемая кривая была смещена от поверхности тела).
+    pSpline->Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, -50, 0)));
+    show(Style(3, RGB(0, 0, 255)), pSpline);
+
+    // Уменьшение счетчиков ссылок объектов ядра
+    ::DeleteItem(pSolid);
+    ::DeleteItem(pPlaneXY);
+    ::DeleteItem(pSpline);
+
+    return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"  
+
+#include "action_solid.h"
+
+#include "cur_arc.h"
+#include "cur_polyline.h"
+#include "surf_plane.h"
+
+using namespace c3d;
+
+// Вспомогательная функция для построения образующей в виде четырех окружностей.
+// В качестве результата возвращается массив поверхностей – плоскостей (на которых лежат окружности) и массив окружностей.
+void CreateSketch(RPArray<MbSurface>& _arrPlanes, RPArray<MbContour>& _arrCircles)
+{
+    // Радиусы четырех окружностей
+    const int CIRCLES_CNT = 4;
+    const double RAD[] = {20, 50, 20, 40};
+
+    // Центры окружностей в локальных СК соответствующих плоскостей.
+    // Хотя координаты всех центров совпадают, они представлены в виде массива
+    // для того, чтобы их можно было легко изменить.
+    const MbCartPoint arrCenters[CIRCLES_CNT] = {
+    MbCartPoint(0, 0), MbCartPoint(0, 0), MbCartPoint(0, 0), MbCartPoint(0, 0)
+   };
+
+    // Двумерные кривые - окружности с центром в точке centerArc
+    MbArc* pArc2D[CIRCLES_CNT] = {nullptr};
+    for(int i = 0; i < CIRCLES_CNT; i++)
+        pArc2D[i] = new MbArc(arrCenters[i], RAD[i]);
+
+    // Системы координат, задающие положение плоскостей окружностей в пространстве.
+    // 0-я окружность располагается в плоскости XZ мировой СК, плоскости для остальных
+    // окружностей располагаются выше плоскости XZ.
+    MbPlacement3D plArc[CIRCLES_CNT] = 
+    {
+    MbPlacement3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0),
+                  MbCartPoint3D(0, 0, 1)),
+    MbPlacement3D(MbCartPoint3D(0, 60, 0), MbCartPoint3D(1, 60, 0),
+                  MbCartPoint3D(0, 60, 1)),
+    MbPlacement3D(MbCartPoint3D(0, 100, 0), MbCartPoint3D(1, 100, 0),
+                  MbCartPoint3D(0, 100, 1)),
+    MbPlacement3D(MbCartPoint3D(0, 130, 0), MbCartPoint3D(1, 130, 0),
+                  MbCartPoint3D(0, 130, 1))
+   };
+
+    // Поверхности - плоскости, содержащие окружности.
+    // Положение плоскостей задается локальными системами координат plArc.
+    MbSurface* pPlanes[CIRCLES_CNT] = {nullptr};
+    for(int i = 0; i < CIRCLES_CNT; i++)
+        pPlanes[i] = new MbPlane(plArc[i]);
+
+    // Сохранение плоскостей и окружностей (в виде контуров) в возвращаемых массивах.
+    for (int i = 0; i < CIRCLES_CNT; i++)
+    {
+        _arrCircles.push_back(new MbContour(*pArc2D[i], true));
+        _arrPlanes.push_back(pPlanes[i]);
+   }
+
+    // Уменьшение счетчиков ссылок объектов ядра
+    for (int i = 0; i < CIRCLES_CNT; i++)
+    ::DeleteItem(pArc2D[i]);
+}
+
+bool run()
+{
+    // Получение образующей в виде массивов поверхностей и контуров на них с помощью
+    // вспомогательной функции.
+    RPArray<MbSurface> arrSurfaces;
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrSurfaces, arrContours);
+
+    // Объект с параметрами операции заметания.
+    LoftedValues params;
+
+    // Объекты для именования элементов модели твердого тела.
+    MbSNameMaker names(ct_CurveLoftedSolid, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> contourNames(0, 1, false);
+
+    // Построение твердого тела заметания
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::LoftedSolid(arrSurfaces, arrContours, nullptr, params, nullptr,
+                                     nullptr, names, contourNames, pSolid);
+    // Отображение построенного тела
+    if(res == rt_Success)
+        show(Style(1, LIGHTGRAY), pSolid);
+
+    // Уменьшение счетчика ссылок тела
+    ::DeleteItem(pSolid);
+
+    return true;
+}
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"  
+
+#include "action_solid.h"
+
+#include "cur_arc.h"
+#include "cur_polyline.h"
+#include "surf_plane.h"
+
+using namespace c3d;
+using namespace std;
+
+// Вспомогательная функция для построения образующей в виде набора из трех сечений -
+// окружности, квадрата и треугольника.
+void CreateSketch(RPArray<MbSurface>& _arrSurfaces, RPArray<MbContour>& _arrContours)
+{
+    // Первое сечение - окружность - лежит в плоскости XZ мировой СК.
+    const MbCartPoint circleCenter(0, 0);
+    const double CIRCLE_RAD = 50;
+    MbArc* pArc2D = new MbArc(circleCenter, CIRCLE_RAD);
+    MbPlacement3D plCircle(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0),
+                           MbCartPoint3D(0, 0, 1));
+    MbSurface* pSurfCircle = new MbPlane(plCircle);
+    MbContour* pContourArc = new MbContour(*pArc2D, true);
+
+    // Второе сечение - квадрат - лежит в плоскости, параллельной XZ, смещенной на
+    // 50 единиц по оси Y мировой СК.
+    const double SQUARE_SIDE = 50;
+    const double SQUARE_OFS_Y = 50;
+    SArray<MbCartPoint> arrSqVerts(4);
+    arrSqVerts.Add(MbCartPoint(-SQUARE_SIDE/2, -SQUARE_SIDE/2));
+    arrSqVerts.Add(MbCartPoint(-SQUARE_SIDE/2,  SQUARE_SIDE/2));
+    arrSqVerts.Add(MbCartPoint(SQUARE_SIDE/2,  SQUARE_SIDE/2));
+    arrSqVerts.Add(MbCartPoint(SQUARE_SIDE/2, -SQUARE_SIDE/2));
+    MbPolyline* pSquarePoly = new MbPolyline(arrSqVerts, true);
+    MbPlacement3D plSquare(MbCartPoint3D(0, SQUARE_OFS_Y, 0),
+                           MbCartPoint3D(1, SQUARE_OFS_Y, 0),
+                           MbCartPoint3D(0, SQUARE_OFS_Y, 1));
+    MbSurface* pSurfSquare = new MbPlane(plSquare);
+    MbContour* pContourSquare = new MbContour(*pSquarePoly, true);
+
+    // Третье сечение - треугольник - лежит в плоскости, параллельной XZ, смещенной на
+    // 100 единиц по оси Y мировой СК.
+    const double TRIANGLE_SIDE = 70;
+    const double TRIANGLE_OFS_Y = 100;
+    SArray<MbCartPoint> arrTrVerts(3);
+    arrTrVerts.Add(MbCartPoint(-TRIANGLE_SIDE/2, -20));
+    arrTrVerts.Add(MbCartPoint(0, 60));
+    arrTrVerts.Add(MbCartPoint(TRIANGLE_SIDE/2, -20));
+    MbPolyline* pTrianglePoly = new MbPolyline(arrTrVerts, true);
+    MbPlacement3D plTriangle(MbCartPoint3D(0, TRIANGLE_OFS_Y, 0),
+                             MbCartPoint3D(1, TRIANGLE_OFS_Y, 0),
+                             MbCartPoint3D(0, TRIANGLE_OFS_Y, 1));
+    MbSurface* pSurfTriangle = new MbPlane(plTriangle);
+    MbContour* pContourTriangle = new MbContour(*pTrianglePoly, true);
+
+    // Сохранение возвращаемых объектов ядра - контуров-сечений и содержащих
+    // их поверхностей-плоскостей.
+    _arrSurfaces.push_back(pSurfCircle);
+    _arrSurfaces.push_back(pSurfSquare);
+    _arrSurfaces.push_back(pSurfTriangle);
+    _arrContours.push_back(pContourArc);
+    _arrContours.push_back(pContourSquare);
+    _arrContours.push_back(pContourTriangle);
+
+    // Уменьшение счетчиков двумерных кривых, использовавшихся для построения контуров.
+    ::DeleteItem(pArc2D);
+    ::DeleteItem(pSquarePoly);
+    ::DeleteItem(pTrianglePoly);
+}
+
+bool run()
+{
+    // Получение образующей в виде массивов поверхностей и контуров на них с помощью
+    // вспомогательной функции.
+    RPArray<MbSurface> arrSurfaces;
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrSurfaces, arrContours);
+
+    // Объект с параметрами операции заметания.
+    LoftedValues params;
+
+    // Объекты для именования элементов модели твердого тела.
+    MbSNameMaker names(ct_CurveLoftedSolid, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> contourNames(0, 1, false);
+
+    // Построение твердого тела заметания
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::LoftedSolid(arrSurfaces, arrContours, nullptr, params, nullptr,
+                                     nullptr, names, contourNames, pSolid);
+    // Отображение построенного тела
+    if(res == rt_Success)
+        show(Style(1, LIGHTGRAY), pSolid);
+
+    // Уменьшение счетчика ссылок тела
+    ::DeleteItem(pSolid);
+
+    return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+
+#include <vector>
+#include "cur_nurbs3d.h"
+#include "action_solid.h"
+
+#include "cur_arc.h"
+#include "cur_polyline.h"
+#include "surf_plane.h"
+
+using namespace std;
+using namespace c3d;
+
+// Вспомогательная функция для построения образующей в виде набора из двух сечений -
+// окружности и квадрата
+void CreateSketch(RPArray<MbSurface>& _arrSurfaces, RPArray<MbContour>& _arrContours)
+{
+    // Первое сечение - окружность.
+    const MbCartPoint circleCenter(0, 0);
+    const double RAD = 50;
+    MbArc* pArc2D = new MbArc(circleCenter, RAD);
+    MbContour* pContourCircle = new MbContour(*pArc2D, true);
+
+    // Второе сечение - квадрат
+    const double SQUARE_SIDE = 50;
+    SArray<MbCartPoint> arrVertsSq(4);
+    arrVertsSq.Add(MbCartPoint(-SQUARE_SIDE/2, -SQUARE_SIDE/2));
+    arrVertsSq.Add(MbCartPoint(-SQUARE_SIDE/2, SQUARE_SIDE/2));
+    arrVertsSq.Add(MbCartPoint(SQUARE_SIDE/2, SQUARE_SIDE/2));
+    arrVertsSq.Add(MbCartPoint(SQUARE_SIDE/2, -SQUARE_SIDE/2));
+    MbPolyline* pSquarePoly   = new MbPolyline(arrVertsSq, true);
+    MbContour* pContourSquare = new MbContour(*pSquarePoly, true);
+
+    // Построение поверхностей-плоскостей, содержащих сечения.
+    MbPlacement3D plCircle(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0),
+                           MbCartPoint3D(0, 0, 1));
+    MbPlacement3D plSquare(MbCartPoint3D(500, 500, 0), MbCartPoint3D(501, 500, 0),
+                           MbCartPoint3D(500, 500, 1));
+    MbSurface* pSurfCircle = new MbPlane(plCircle);
+    MbSurface* pSurfSquare = new MbPlane(plSquare);
+
+    // Сохранение возвращаемых объектов в выходных массивах.
+    _arrSurfaces.push_back(pSurfCircle);
+    _arrSurfaces.push_back(pSurfSquare);
+    _arrContours.push_back(pContourCircle);
+    _arrContours.push_back(pContourSquare);
+
+    // Уменьшение счетчиков ссылок объектов-плоских кривых, использовавшихся
+    // для построения контуров.
+    ::DeleteItem(pArc2D);
+    ::DeleteItem(pSquarePoly);
+}
+
+bool run()
+{
+    // СК для отображения направляющей, совпадает с мировой СК.
+    MbPlacement3D pl;
+
+    // Получение образующей в виде массивов поверхностей и контуров на них с помощью
+    // вспомогательной функции.
+    RPArray<MbSurface> arrSurfaces;
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrSurfaces, arrContours);
+
+    // Объект с параметрами операции заметания.
+    LoftedValues params;
+
+    // Объекты для именования элементов модели твердого тела.
+    MbSNameMaker names(ct_CurveLoftedSolid, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> contourNames(0, 1, false);
+
+    // Массив контрольных точек для построения сплайновой направляющей кривой
+    vector<MbCartPoint3D> vecPnts = {
+    {0,   0,   0}, 
+    {10,  155, 0}, 
+    {300, 250, 0},
+    {450, 350, 0}, 
+    {500, 500, 0}
+    };
+
+    SArray<MbCartPoint3D> arrPnts(vecPnts);
+    // Построение направляющей в виде незамкнутого NURBS-сплайна 4-го порядка
+    ptrdiff_t degree = 4;
+    MbNurbs3D* pSpine = MbNurbs3D::Create(degree, arrPnts, false);
+    // Отображение направляющей (со сдвигом для удобства восприятия).
+    if(pSpine)
+    {
+        pSpine->Move(MbVector3D(MbCartPoint3D(0, 0, 0),MbCartPoint3D(0, 0, 250)));
+        show(Style(1, RGB(255, 0, 0)), pSpine);
+   }
+
+    // Построение твердого тела по сечениям
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::LoftedSolid(arrSurfaces, arrContours, pSpine, params,
+                                     nullptr, nullptr, names, contourNames, pSolid);
+
+    // Отображение построенного тела
+    if(res == rt_Success)
+        show(Style(1, LIGHTGRAY), pSolid);
+
+    // Уменьшение счетчиков ссылок объектов ядра
+    ::DeleteItem(pSolid);
+    ::DeleteItem(pSpine);
+
+    return true;
+}
+[end]

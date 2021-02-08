@@ -1,0 +1,14 @@
+div {
+    border: 2px solid black;
+    width: 370px;
+    height: 387px;
+}
+
+td {
+    border: 2px solid black;
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 50pt;
+    width: 90px;
+    height: 90px;
+}

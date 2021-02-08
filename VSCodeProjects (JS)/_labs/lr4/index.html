@@ -1,0 +1,29 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        let getTranslate = str => {
+            let ruAlph = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+            let enAlph = "a b v g d e yo zh z i j k l m n o p r s t u f x c ch sh shh `` y` ` e` yu ya";
+
+            ruAlph = ruAlph.concat(ruAlph.toUpperCase());
+            enAlph = enAlph.concat(" " + enAlph.toUpperCase()).split(" ");
+
+            for (let i = 0; i < ruAlph.length; i++)
+                str = str.replace(new RegExp(ruAlph[i], "g"), enAlph[i]);
+
+            return str;
+        };
+
+        document.write(getTranslate(prompt('Введите строку')));
+    </script>
+</body>
+
+</html>

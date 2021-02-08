@@ -1,0 +1,704 @@
+[id = "code_block_1"]
+[begin]
+#include "setup.h"
+
+#include "action_solid.h"
+#include <vector>
+
+using namespace c3d;
+using namespace std;
+
+// Вспомогательная функция для построения элементарного тела – симметричной
+// пирамиды с квадратным основанием.
+// Основание пирамиды лежит в плоскости XZ мировой СК.
+// Входные параметры:
+// baseSize - размер стороны основания,
+// height - высота пирамиды.
+// Выходные параметры:
+// Указатель на динамически созданный объект геометрической модели - твердое тело
+
+MbSolid* CreatePyramid(const double baseSize, const double height)
+{
+    // Именователь граней «по умолчанию»
+    MbSNameMaker names(1, MbSNameMaker::i_SideNone, 0);
+    // Указатель на строящееся твердое тело
+    MbSolid* pSolid = nullptr;
+    // Массив точек для построения пирамиды - 4 точки основания и вершина
+    vector<MbCartPoint3D> vecVerts = {{0, 0, 0}, {baseSize, 0, 0},
+    {baseSize, 0, baseSize}, {0, 0, baseSize}, {baseSize/2, height, baseSize/2}};
+    SArray<MbCartPoint3D> arrVerts(vecVerts);
+    // Вызов функции-утилиты для построения элементарного тела – пирамиды
+    ::ElementarySolid(arrVerts, et_Pyramid, names, pSolid);
+    return pSolid;
+}
+
+bool run()
+{
+    // Построение пирамиды с помощью вспомогательной функции
+    const double PYR_BASE = 50.0;    // Длина стороны основания
+    const double PYR_HEIGHT = 100.0; // Высота пирамиды
+    MbSolid* pPyr = CreatePyramid(PYR_BASE, PYR_HEIGHT);
+
+    // Изменение цветовых атрибутов граней
+    if(pPyr)
+    {
+        // Массив цветов для назначения граням пирамиды
+        vector<COLORREF> arrColors = {RGB(0xFF, 0, 0), RGB(0, 0xFF, 0), RGB(0, 0, 0xFF),
+                                      RGB(0xFF, 0xFF, 0), RGB(0xFF, 0, 0xFF)};
+        // Перебор всех граней твердого тела
+        const size_t faceCnt = pPyr->GetFacesCount();
+        for (size_t faceIdx = 0; faceIdx < faceCnt; faceIdx++)
+        {
+            // Получение указателя на очередную грань с индексом faceIdx
+            MbFace* pFace = pPyr->GetFace(faceIdx);
+
+            // Назначение цветового атрибута очередной грани
+            if(pFace)
+                if(faceIdx < arrColors.size())
+                    pFace->SetColor(arrColors[faceIdx]);
+       }
+   }
+    // Отображение построенного тела
+    if(pPyr)
+        show(pPyr);
+
+    // Уменьшение счетчика ссылок динамически созданного объекта ядра
+    ::DeleteItem(pPyr);
+
+    return true;
+}
+[end]
+[id = "code_block_2"]
+[begin]
+#include "setup.h"
+
+#include "action_solid.h"
+#include <vector>
+
+#include "point_frame.h" 
+
+using namespace c3d;
+using namespace std;
+
+MbSolid* CreatePyramid(const double baseSize, const double height)
+{
+    // Именователь граней «по умолчанию»
+    MbSNameMaker names(1, MbSNameMaker::i_SideNone, 0);
+    // Указатель на строящееся твердое тело
+    MbSolid* pSolid = nullptr;
+    // Массив точек для построения пирамиды - 4 точки основания и вершина
+    vector<MbCartPoint3D> vecVerts = {{0, 0, 0}, {baseSize, 0, 0},
+    {baseSize, 0, baseSize}, {0, 0, baseSize}, {baseSize/2, height, baseSize/2}};
+    SArray<MbCartPoint3D> arrVerts(vecVerts);
+    // Вызов функции-утилиты для построения элементарного тела – пирамиды
+    ::ElementarySolid(arrVerts, et_Pyramid, names, pSolid);
+    return pSolid;
+}
+
+bool run()
+{
+    // Построение пирамиды с помощью вспомогательной функции CreatePyramid,
+    // использовавшейся в примере 2.
+    const double PYR_BASE = 50.0; // Длина стороны основания
+    const double PYR_HEIGHT = 100.0; // Высота пирамиды
+    MbSolid* pPyr = CreatePyramid(PYR_BASE, PYR_HEIGHT);
+    if(!pPyr)
+        return false;
+
+    // Отображение твердого тела - пирамиды
+    show(pPyr);
+
+    // Доступ к оболочке твердого тела
+    MbFaceShell* pShell = pPyr->GetShell();
+    if(!pShell)
+        return false;
+
+    // Координаты четырех исходных точек снаружи пирамиды (выбраны произвольно,
+    // в данном примере эти точки построены как середины сторон основания,
+    // поднятые на половину высоты пирамиды.)
+    vector<MbCartPoint3D> vecPntsSrc =
+	{
+        {PYR_BASE/2, PYR_HEIGHT/2, 0}, 
+        {PYR_BASE, PYR_HEIGHT/2, PYR_BASE/2},
+        {0, PYR_HEIGHT/2, PYR_BASE/2}, 
+        {PYR_BASE/2, PYR_HEIGHT/2, PYR_BASE} 
+   };
+    // Вычисление трехмерных точек - проекций исходных точек на грани пирамиды.
+    vector<MbCartPoint3D> vecPntsProj;
+    const size_t pntSrcCnt = vecPntsSrc.size();
+
+    for (size_t i = 0; i < pntSrcCnt; i++)
+    {
+        // Вызов метода класса "Оболочка" для проецирования трехмерной точки
+        // на оболочку твердого тела.
+        // Метод MbFaceShell::DistanceToBound возвращает данные о проекции точки на
+        // ближайщую грань оболочки и информацию о расположении точки
+        // относительно оболочки.
+        MbPntLoc finFaceData;
+        MbeItemLocation rShell;
+
+        bool bProjOK = pShell->DistanceToBound(vecPntsSrc[i], EPSILON,
+                                               finFaceData, rShell);
+
+        // В случае, если проекция точки vecPntsSrc[i] успешно вычислена,
+        // в массив vecPntsProj помещаются трехмерные координаты этой
+        // проекции в мировой СК.
+        if(bProjOK)
+            vecPntsProj.push_back(finFaceData.GetPoint());
+   }
+
+    // Отображение исходных точек, их проекций и проецирующих отрезков.
+    if (vecPntsSrc.size() == vecPntsProj.size())
+    {
+        // Исходные точки и их проекции будут отображаться в виде объекта "Точечный каркас"
+        MbPointFrame* pPntFrame = new MbPointFrame;
+        for (int i = 0; i<pntSrcCnt; i++)
+        {
+            // Исходные точки отображаются красным цветом.
+            // Поскольку исходные точки и их проекции добавляются в точечный
+            // каркас по очереди, то очередная пара точек будет храниться
+            // в каркасе с индексами (2*i, 2*i+1).
+            pPntFrame->AddVertex(vecPntsSrc[i]);
+            pPntFrame->GetVertex(2*i)->SetColor(RGB(0xFF, 0, 0));
+            pPntFrame->GetVertex(2*i)->SetWidth(10);
+
+            // Проекции исходных точек отображаются зеленым цветом.
+            pPntFrame->AddVertex(vecPntsProj[i]);
+            pPntFrame->GetVertex(2*i+1)->SetColor(RGB(0, 0xFF, 0));
+            pPntFrame->GetVertex(2*i+1)->SetWidth(10);
+
+            // Отображение проецирующего отрезка для i-й пары точек.
+            // Отрезки отображаются фиолетовым цветом, линией толщиной 3.
+            MbLineSegment3D* pSeg = new MbLineSegment3D(vecPntsSrc[i], vecPntsProj[i]);
+            Style segStyle(3, RGB(0xFF, 0, 0xFF));
+            show(segStyle, pSeg);
+       }
+ 
+        // Отображение точечного каркаса
+        show(pPntFrame);
+   }
+
+    // Уменьшение счетчика ссылок динамически созданного объекта ядра
+    ::DeleteItem(pPyr); 
+
+    return true;
+}
+[end]
+[id = "code_block_3"]
+[begin]
+#include "setup.h"  
+
+#include "action_solid.h"
+#include "cr_elementary_solid.h"
+#include <vector>
+
+using namespace c3d;
+using namespace std;
+
+bool run()
+{
+    // Именователь граней «по умолчанию»
+    MbSNameMaker names(1, MbSNameMaker::i_SideNone, 0);
+
+    // Массив опорных точек для построения цилиндра
+    SArray<MbCartPoint3D> points(3);
+    // Локальная СК цилиндра смещена на 50 единиц по оси Y мировой СК.
+    points.Add(MbCartPoint3D(0, 50, 0));
+    // Направление оси Z локальной СК совпадает с направлением
+    // оси Z мировой СК, высота цилиндра равна 10 единицам.
+    points.Add(MbCartPoint3D(0, 50, 10));
+    // Направление оси X локальной СК совпадает с направлением оси X
+    // мировой СК, радиус цилиндра равен 10 единицам.
+    points.Add(MbCartPoint3D(10, 50, 0));
+
+    // Создание объекта-строителя для построения оболочки элементарного тела – цилиндра
+    MbElementarySolid* pCylCreator = new MbElementarySolid(points, et_Cylinder, names);
+    // Построение оболочки цилиндра с помощью объекта-строителя
+    MbFaceShell* pShell = nullptr;
+    if(pCylCreator)
+        pCylCreator->CreateShell(pShell, cm_Same);
+    // Построение твердого тела
+    MbSolid* pCyl = nullptr;
+    if(pShell)
+        pCyl = new MbSolid(pShell, pCylCreator);
+
+    // Отображение построенного тела
+    if(pCyl)
+        show(pCyl);
+
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem(pCylCreator);
+    ::DeleteItem(pShell);
+    ::DeleteItem(pCyl); 
+
+    return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"  
+
+#include "action_solid.h"
+#include "cr_elementary_solid.h"
+#include <vector>
+
+using namespace c3d;
+using namespace std;
+
+bool run()
+{
+    // Именователь граней «по умолчанию»
+    MbSNameMaker names(1, MbSNameMaker::i_SideNone, 0);
+
+    // Массив опорных точек для построения цилиндра
+    SArray<MbCartPoint3D> points(3);
+    // Локальная СК цилиндра смещена на 50 единиц по оси Y мировой СК
+    points.Add(MbCartPoint3D(0, 50, 0));
+    // Направление оси Z локальной СК совпадает с направлением
+    // оси Z мировой СК, высота цилиндра равна 10 единицам
+    points.Add(MbCartPoint3D(0, 50, 10));
+    // Направление оси X локальной СК совпадает с направлением оси X
+    // мировой СК, радиус цилиндра равен 10 единицам
+    points.Add(MbCartPoint3D(10, 50, 0));
+
+    // Построение элементарного тела – цилиндра - по трем точкам
+    MbSolid* pCyl = nullptr;
+    ::ElementarySolid(points, et_Cylinder, names, pCyl);
+
+    // Отображение построенного тела
+    if(pCyl)
+        show(pCyl);
+
+    // Уменьшение счетчика ссылок динамически созданного объекта ядра
+    ::DeleteItem(pCyl);
+
+    return true;
+}
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"
+
+#include <vector>
+#include "alg_curve_fillet.h"
+
+#include "cur_polyline.h"
+#include "surf_plane.h"
+#include "action_solid.h"
+
+using namespace std;
+using namespace c3d;
+
+// Вспомогательная функция для построения образующей в виде квадрата со скруглениями.
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+    // Создание массива точек квадрата, к которому в дальнейшем добавятся скругления.
+    // Размер массива - 8 точек для учета точек четырех сегментов скруглений.
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add(MbCartPoint(0,  0));
+    arrPnts.Add(MbCartPoint(50, 0));
+    arrPnts.Add(MbCartPoint(50, 50));
+    arrPnts.Add(MbCartPoint(0,  50));
+
+    // Построение единой ломаной внешнего контура по точкам
+    MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+    MbContour* pContourPolyline = nullptr;
+
+    // Задание скругления с использованием функции FilletPolyContour
+    ::FilletPolyContour(pPolyline, 5, false, arrPnts[4], pContourPolyline);
+
+    // Задание индексов точек, в которых будет задаваться скругление с учетом
+    // добавления новой точки при скруглении с использованием функции FilletTwoSegments
+    ptrdiff_t idxSideRight1 = 0;
+    ptrdiff_t idxSideRight2 = 2;
+    ptrdiff_t idxSideRight3 = 4;
+
+    // Добавление скруглений
+    pContourPolyline->FilletTwoSegments(idxSideRight1, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight2, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight3, 5);
+
+    _arrContours.push_back(pContourPolyline);
+}
+
+bool run()
+{
+    // Локальная СК (по умолчанию совпадает с мировой СК)
+    MbPlacement3D pl;
+
+    // Создание образующей для тела выдавливания
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrContours);
+
+    // Отображение образующей (в плоскости XY глобальной СК)
+    for (int i = 0; i<arrContours.size(); i++)
+        show(Style(1, LIGHTRED), arrContours[i], &pl);
+
+    // ПОСТРОЕНИЕ ТЕЛА ВЫДАВЛИВАНИЯ
+    // Образующая размещается на плоскости XY глобальной СК.
+    // Важное замечание: объект-плоскость должен создаваться динамически,
+    // поскольку он продолжает использоваться в объекте-твердом теле после
+    // выхода из данной функции.
+    MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0),
+                                    MbCartPoint3D(1, 0, 0),
+                                    MbCartPoint3D(0, 1, 0));
+    // Объект, хранящий параметры образующей
+    MbSweptData sweptData(*pPlaneXY, arrContours);
+    // Направляющий вектор для операции выдавливания
+    MbVector3D dir(0, 0, -1);
+
+    // Параметры операции выдавливания, задающие свойства тела для построения в прямом
+    // и в обратном направлении вдоль (глубина выдавливания и уклон).
+    const double HEIGHT_FORWARD = 60.0, HEIGHT_BACKWARD = 30.0;
+    const double ANGLE_FORWARD_DEGREE = 15.0;
+    ExtrusionValues extrusionParams(HEIGHT_FORWARD, HEIGHT_BACKWARD);
+    // Указание уклона для выдавливания в прямом направлении
+    extrusionParams.side1.rake = ANGLE_FORWARD_DEGREE * M_PI/180.0;
+
+    // Именователи элементов модели твердого тела и контуров образующей
+    MbSNameMaker operNames(1, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> cNames(0, 1, false);
+
+    // Вызов функции-утилиты для построения твердого тела выдавливания
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::ExtrusionSolid(sweptData, dir, nullptr, nullptr, false,
+                                        extrusionParams, operNames, cNames, pSolid);
+
+    // Отображение построенного тела
+    if (res == rt_Success)
+    {
+        // Смещение тела по оси Z, чтобы при отображении оно не накладывалось на образующую
+        pSolid->Move(MbVector3D(0, 0, -100));
+        show(Style(1, LIGHTGRAY), pSolid);
+   }
+
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem(pSolid);
+
+    return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+
+#include <vector>
+#include "alg_curve_fillet.h"
+
+#include "cur_polyline.h"
+#include "surf_plane.h"
+#include "action_solid.h"
+#include "action_surface.h"
+
+using namespace std;
+using namespace c3d;
+
+// Вспомогательная функция для построения образующей в виде квадрата со скруглениями.
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+    // Создание массива точек квадрата, к которому в дальнейшем добавятся скругления.
+    // Размер массива - 8 точек для учета точек четырех сегментов скруглений.
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add(MbCartPoint(0,  0));
+    arrPnts.Add(MbCartPoint(50, 0));
+    arrPnts.Add(MbCartPoint(50, 50));
+    arrPnts.Add(MbCartPoint(0,  50));
+
+    // Построение единой ломаной внешнего контура по точкам
+    MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+    MbContour* pContourPolyline = nullptr;
+
+    // Задание скругления с использованием функции FilletPolyContour
+    ::FilletPolyContour(pPolyline, 5, false, arrPnts[4], pContourPolyline);
+
+    // Задание индексов точек, в которых будет задаваться скругление с учетом
+    // добавления новой точки при скруглении с использованием функции FilletTwoSegments
+    ptrdiff_t idxSideRight1 = 0;
+    ptrdiff_t idxSideRight2 = 2;
+    ptrdiff_t idxSideRight3 = 4;
+
+    // Добавление скруглений
+    pContourPolyline->FilletTwoSegments(idxSideRight1, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight2, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight3, 5);
+
+    _arrContours.push_back(pContourPolyline);
+}
+
+bool run()
+{
+    // Локальная СК (по умолчанию совпадает с мировой СК)
+    MbPlacement3D pl;
+
+    // Вызов вспомогательной функции для построения образующей (из примера 6)
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrContours);
+
+    // Построение ограничивающей цилиндрической поверхности
+    MbSurface* pCylSurf = nullptr;
+    SArray<MbCartPoint3D> arrPnts(3);
+    arrPnts.Add(MbCartPoint3D(-20, 25, -50));
+    arrPnts.Add(MbCartPoint3D(70, 25, -50));
+    arrPnts.Add(MbCartPoint3D(0,  55, -50));
+    ::ElementarySurface(arrPnts[0], arrPnts[1], arrPnts[2],
+                        st_CylinderSurface, pCylSurf);
+
+    // Отображение цилиндрической поверхности
+    if (pCylSurf)
+        show(Style(1, LIGHTBLUE), pCylSurf);
+
+    // Формирование параметров образующей для операции построения тела выдавливания
+    MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0),
+                                    MbCartPoint3D(0, 1, 0));
+    MbSweptData sweptData(*pPlaneXY, arrContours);
+
+    // Направляющий вектор для операции выдавливания
+    MbVector3D dir(0, 0, -1);
+
+    // Параметры операции выдавливания
+    ExtrusionValues extrusionParam;
+    // Задание поверхности, до которой будет выполняться выдавливание
+    // в прямом направлении
+    extrusionParam.SetSurface1(pCylSurf);
+    // Указание способа выдавливания в прямом направлении - до пересечения с поверхностью
+    extrusionParam.side1.way = sw_surface;
+
+    // Объекты для именования элементов модели твердого тела и контуров образующей
+    MbSNameMaker operNames(1, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> cNames(0, 1, false);
+
+    // Вызов функции-утилиты для построения тела выдавливания
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::ExtrusionSolid(sweptData, dir, nullptr, nullptr, false,
+                                        extrusionParam, operNames, cNames, pSolid);
+    // Отображение построенного тела
+    if(res == rt_Success)
+        show(Style(1, LIGHTGRAY), pSolid);
+
+    // Уменьшение счетчиков ссылок динамических объектов ядра
+    ::DeleteItem(pSolid);
+    ::DeleteItem(pCylSurf);
+
+    return true;
+}
+[end]
+[id = "code_block_7"]
+[begin]
+#include "setup.h"
+
+#include <vector>
+#include "alg_curve_fillet.h"
+
+#include "cur_polyline.h"
+#include "surf_plane.h"
+#include "action_solid.h"
+
+using namespace std;
+using namespace c3d;
+
+// Вспомогательная функция для построения образующей в виде квадрата со скруглениями.
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+    // Создание массива точек квадрата, к которому в дальнейшем добавятся скругления.
+    // Размер массива - 8 точек для учета точек четырех сегментов скруглений.
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add(MbCartPoint(0,  0));
+    arrPnts.Add(MbCartPoint(50, 0));
+    arrPnts.Add(MbCartPoint(50, 50));
+    arrPnts.Add(MbCartPoint(0,  50));
+
+    // Построение единой ломаной внешнего контура по точкам
+    MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+    MbContour* pContourPolyline = nullptr;
+
+    // Задание скругления с использованием функции FilletPolyContour
+    ::FilletPolyContour(pPolyline, 5, false, arrPnts[4], pContourPolyline);
+
+    // Задание индексов точек, в которых будет задаваться скругление с учетом
+    // добавления новой точки при скруглении с использованием функции FilletTwoSegments
+    ptrdiff_t idxSideRight1 = 0;
+    ptrdiff_t idxSideRight2 = 2;
+    ptrdiff_t idxSideRight3 = 4;
+
+    // Добавление скруглений
+    pContourPolyline->FilletTwoSegments(idxSideRight1, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight2, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight3, 5);
+
+    _arrContours.push_back(pContourPolyline);
+}
+
+bool run()
+{
+    // Множитель для преобразования угловых значений из градусов в радианы
+    const double DEG_TO_RAD = M_PI / 180.0;
+
+    // Локальная СК (по умолчанию совпадает с мировой СК)
+    MbPlacement3D pl;
+
+    // Вызов функции для построения образующей (из примера 6)
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrContours);
+
+    // Отображение образующей (в плоскости XY глобальной СК)
+    for (int i = 0; i<arrContours.size(); i++)
+        show(Style(1, RGB(0, 0, 255)), arrContours[i], &pl);
+
+    // Подготовка параметров для вызова функции построения тела вращения.
+    // sweptData - объект, в котором хранятся сведения об образующей.
+    MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0),
+                                    MbCartPoint3D(0, 1, 0));
+    MbSweptData sweptData(*pPlaneXY, arrContours);
+
+    // Объект параметров для операции построения тела вращения.
+    // Первые два параметра конструктора задают углы вращения в прямом и обратном
+    // направлении (по нормали к образующей или противоположно этой нормали).
+    // В данном примере вращение осуществляется на 120 градусов в прямом направлении.
+    // Третий параметр задает форму топологии твердого тела.
+    // При s = 0 строится тело с топологией сферы, при s = 1 - с топологией тора.
+    // Если образующая - незамкнутая кривая, и ось вращения лежит в плоскости кривой,
+    // то при s = 0 при построении образующая будет автоматически продлена до оси
+    // вращения. В данном примере различий между значениями s нет, т.к. образующая
+    // имеет вид замкнутого контура.
+    RevolutionValues revParms(120*DEG_TO_RAD, 0, 0);
+
+    // Следующая строка задает построение тела с незамкнутой оболочкой ("пустого").
+    // revParms.shellClosed = false;
+    // Задание толщины стенки тела
+    // revParms.thickness1 = 8;
+
+    // Именователи для операции построения тела вращения и для контуров образующей
+    MbSNameMaker operNames(1, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> cNames(0, 1, false);
+
+    // Ось вращения для построения тела:
+    // ось Y мировой СК смещается на -50 единиц вдоль оси X.
+    MbAxis3D axis(pl.GetAxisY());
+    axis.Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(-50, 0, 0)));
+
+    // Вызов функции-утилиты для построения твердого тела вращения
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::RevolutionSolid(sweptData, axis, revParms,
+                                        operNames, cNames, pSolid);
+							
+    // Отображение построенного тела
+    if(res == rt_Success)
+        show(Style(1, LIGHTGRAY), pSolid);
+
+    // Уменьшение счетчиков ссылок динамических объектов ядра
+    ::DeleteItem(pSolid);
+
+    return true;
+}
+[end]
+[id = "code_block_8"]
+[begin]
+#include "setup.h"
+
+#include <vector>
+#include "alg_curve_fillet.h"
+
+#include "cur_polyline.h"
+#include "surf_plane.h"
+#include "action_solid.h"
+#include "action_surface.h"
+
+using namespace std;
+using namespace c3d;
+
+// Вспомогательная функция для построения образующей в виде квадрата со скруглениями.
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+    // Создание массива точек квадрата, к которому в дальнейшем добавятся скругления.
+    // Размер массива - 8 точек для учета точек четырех сегментов скруглений.
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add(MbCartPoint(0,  0));
+    arrPnts.Add(MbCartPoint(50, 0));
+    arrPnts.Add(MbCartPoint(50, 50));
+    arrPnts.Add(MbCartPoint(0,  50));
+
+    // Построение единой ломаной внешнего контура по точкам
+    MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+    MbContour* pContourPolyline = nullptr;
+
+    // Задание скругления с использованием функции FilletPolyContour
+    ::FilletPolyContour(pPolyline, 5, false, arrPnts[4], pContourPolyline);
+
+    // Задание индексов точек, в которых будет задаваться скругление с учетом
+    // добавления новой точки при скруглении с использованием функции FilletTwoSegments
+    ptrdiff_t idxSideRight1 = 0;
+    ptrdiff_t idxSideRight2 = 2;
+    ptrdiff_t idxSideRight3 = 4;
+
+    // Добавление скруглений
+    pContourPolyline->FilletTwoSegments(idxSideRight1, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight2, 5);
+    pContourPolyline->FilletTwoSegments(idxSideRight3, 5);
+
+    _arrContours.push_back(pContourPolyline);
+}
+
+bool run()
+{
+    // Множитель для преобразования угловых значений из градусов в радианы
+    const double DEG_TO_RAD = M_PI / 180.0;
+
+    // Локальная СК (по умолчанию совпадает с мировой СК)
+    MbPlacement3D pl;
+
+    // Вызов функции для построения образующей (из примера 6)
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrContours);
+
+    // Построение ограничивающей цилиндрической поверхности
+    MbSurface* pCylSurf = nullptr;
+    SArray<MbCartPoint3D> arrPnts(3);
+    arrPnts.Add(MbCartPoint3D(-50, -25, -75));
+    arrPnts.Add(MbCartPoint3D(-50,  75, -75));
+    arrPnts.Add(MbCartPoint3D(-20, -25, -75));
+    ::ElementarySurface(arrPnts[0], arrPnts[1], arrPnts[2],
+                        st_CylinderSurface, pCylSurf);
+
+    // Отображение ограничивающей поверхности
+    if(pCylSurf)
+        show(Style(1, LIGHTBLUE), pCylSurf);
+
+    // Подготовка параметров для вызова функции построения тела вращения.
+    // sweptData - объект, в котором хранятся сведения об образующей.
+    MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0),
+                                    MbCartPoint3D(0, 1, 0));
+    MbSweptData sweptData(*pPlaneXY, arrContours);
+
+    // Объект параметров для операции построения тела вращения.
+    RevolutionValues revParms;
+    // Указание поверхности, то которой будет выполняться вращение в прямом направлении.
+    revParms.SetSurface1(pCylSurf);
+    // Указание способа выполнения операции вращения в
+    // прямом направлении – до пересечения с поверхностью.
+    revParms.side1.way = sw_surface;
+
+    // Именователи для операции построения тела вращения и для контуров образующей
+    MbSNameMaker operNames(1, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> cNames(0, 1, false);
+
+    // Ось вращения для построения тела:
+    // ось Y мировой СК смещается на -50 единиц вдоль оси X.
+    MbAxis3D axis(pl.GetAxisY());
+    axis.Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(-50, 0, 0)));
+
+    // Вызов функции-утилиты для построения твердого тела вращения
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::RevolutionSolid(sweptData, axis, revParms,
+                                        operNames, cNames, pSolid);
+
+    // Отображение построенного тела
+    if(res == rt_Success)
+        show(Style(1, LIGHTGRAY), pSolid);
+
+    // Уменьшение счетчиков ссылок динамических объектов ядра
+    ::DeleteItem(pCylSurf);
+    ::DeleteItem(pSolid);
+
+    return true;
+}
+[end]

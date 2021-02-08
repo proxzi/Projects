@@ -1,0 +1,414 @@
+[id = "code_block_1"]
+[begin]
+#include "setup.h"
+#include "mb_placement3d.h"
+#include "cur_line.h" // MbLine - Прямая в двумерном пространстве
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Коэффициент для преобразования значений углов из градусов в радианы
+    const double DEG_TO_RAD = M_PI/180.0;
+    // ПОСТРОЕНИЕ ДВУМЕРНОЙ ПРЯМОЙ – ПО ТОЧКЕ И НАПРАВЛЯЮЩЕМУ ВЕКТОРУ
+    MbCartPoint p1(0, 0);
+    MbDirection dir( DEG_TO_RAD * 45 );
+    // Динамическое создание объекта-прямой посредством вызова конструктора MbLine
+    MbLine* pLine = new MbLine( p1, dir);
+    // Отображение прямой
+    if ( pLine != nullptr )
+        show( Style( 1, RGB(255,0,0)), pLine, &pl );
+    // Получение информации о типе геометрического объекта
+    MbePlaneType type_obj = pLine->IsA(); // pt_Line
+    // Код группового типа, обозначающий родительский класс
+    MbePlaneType type_parent = pLine->Type(); // pt_Curve
+    // Код семейства, обозначающий базовый класс, унаследованный от MbPlaneItem
+    MbePlaneType type_family = pLine->Family(); // pt_Curve
+    // Получение характеристик области определения параметра t
+    // Получение предельных значений параметра кривой
+    double tMin = pLine->GetTMin(); // -50000000
+    double tMax = pLine->GetTMax(); // 50000000
+    // Проверка, является ли кривая замкнутой
+    bool bClosed = pLine->IsClosed(); // false
+    // Проверка, является ли замкнутая кривая периодической
+    bool bIsPeriodic = pLine->IsPeriodic(); // false
+    // Получение периода для периодической кривой
+    double tPeriod = pLine->GetPeriod(); // 0.0
+    // Вычислить метрическую длину кривой
+    double length = 0.0;
+    bool bHasLength = pLine->HasLength( length ); // false
+    // Проверка, является ли кривая ограниченной
+    bool bIsBounded = pLine->IsBounded(); // false
+    // Проверка, является ли кривая прямолинейной
+    bool bIsStraight = pLine->IsStraight(); // true
+    // Уменьшение счетчика ссылок динамического объекта-прямой
+    ::DeleteItem( pLine );
+    return true;
+}
+[end]
+[id = "code_block_2"]
+[begin]
+#include "setup.h"
+#include "mb_placement3d.h"
+#include "cur_line.h" // MbLine - Прямая в двумерном пространстве
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Коэффициент для преобразования значений углов из градусов в радианы
+    const double DEG_TO_RAD = M_PI/180.0;
+    // ПОСТРОЕНИЕ ДВУМЕРНОЙ ПРЯМОЙ – ПО ТОЧКЕ И НАПРАВЛЯЮЩЕМУ ВЕКТОРУ
+    MbCartPoint p1(0, 0);
+    MbDirection dir( DEG_TO_RAD * 30 );
+    // Динамическое создание объекта-прямой посредством вызова конструктора MbLine
+    MbLine* pLine = new MbLine( p1, dir);
+    // Отображение прямой
+    if ( pLine != nullptr )
+        show( Style( 1, RGB(255,0,0)), pLine, &pl );
+    // Вычисление и отображение PNT_CNT точек прямой, соответствующих равномерно
+    // распределенным значениям параметра t из диапазона [T1, T2]
+    const double T1 = -50;
+    const double T2 = +50;
+    const int PNT_CNT = 15;
+    double dt = (T2 - T1)/(PNT_CNT - 1);
+    MbCartPoint pnt;
+    for (int i = 0; i < PNT_CNT; i++)
+    {
+        double t = T1 + dt * i;
+        pLine->PointOn( t, pnt );
+        show( Style(5, t < 0 ? RGB(0, 0, 255) : RGB(255,0,0)), pnt, &pl );
+    }
+    // Уменьшение счетчика ссылок динамического объекта-прямой
+    ::DeleteItem( pLine );
+    return true;
+}
+[end]
+[id = "code_block_3"]
+[begin]
+#include "setup.h"
+#include "mb_placement3d.h"
+#include "cur_line_segment.h" // MbLineSegment - Отрезок в двумерном пространстве
+// std::queue - класс-контейнер "очередь" стандартной библиотеки Си++
+#include <queue>
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Вспомогательная структура для описания треугольника с помощью координат его вершин
+    struct Triangle {
+        MbCartPoint p1, p2, p3;
+        Triangle(const MbCartPoint& _p1, const MbCartPoint& _p2, const MbCartPoint& _p3) :
+        p1(_p1), p2(_p2), p3(_p3) {}
+    };
+    // Исходный равносторонний треугольник для разбиения
+    const double SIDE_SIZE = 10; // Размер стороны исходного треугольника
+    // Вершины исходного треугольника (перечисляются по часовой стрелке)
+    MbCartPoint p1( 5, 5 );
+    MbCartPoint p2( p1.x + SIDE_SIZE*cos(M_PI/3.0), p1.y + SIDE_SIZE*sin(M_PI/3.0 ) );
+    MbCartPoint p3( p1.x + SIDE_SIZE, p1.y );
+    Triangle tr( p1, p2, p3 );
+    // Очередь для хранения треугольников для последующего разбиения
+    std::queue<Triangle> arrTr;
+    arrTr.push( tr );
+    // Глубина разбиения
+    const int DIV_CNT = 4;
+    // Суммарное количество треугольников в результате разбиения
+    // Вычисляется как сумма геометрической прогрессии 3^0 + 3^1 + ...3^n,
+    // Sn = (q^n - 1)/(q - 1), где q = 3, n = DIV_CNT
+    const int TR_CNT = ( int(pow(3, DIV_CNT)) - 1)/2;
+    // Отображение и деление треугольников
+    for ( int i = 0; i < TR_CNT; i++ )
+    {
+        // Выборка очередного треугольника из очереди
+        const Triangle& t = arrTr.front();
+        // Отрезки - стороны треугольника t
+        MbLineSegment* pS1 = new MbLineSegment( t.p1, t.p2 );
+        MbLineSegment* pS2 = new MbLineSegment( t.p2, t.p3 );
+        MbLineSegment* pS3 = new MbLineSegment( t.p3, t.p1 );
+        // Вычисление середин сторон треугольника t
+        MbCartPoint mid1, mid2, mid3;
+        pS1->GetMiddlePoint( mid1 );
+        pS2->GetMiddlePoint( mid2 );
+        pS3->GetMiddlePoint( mid3 );
+        // Сохранение в очереди треугольников, получающихся в
+        // результате разбиение треугольника t
+        arrTr.push( Triangle( t.p1, mid1, mid3 ) );
+        arrTr.push( Triangle( mid1, t.p2, mid2 ) );
+        arrTr.push( Triangle( mid3, mid2, t.p3 ) );
+        // Отображение обработанного треугольника t
+        show( pS1, &pl );
+        show( pS2, &pl );
+        show( pS3, &pl );
+        // Удаление обработанного треугольника t из очереди
+        arrTr.pop();
+        // Уменьшение счетчика ссылок отрезков-сторон t
+        ::DeleteItem( pS1 );
+        ::DeleteItem( pS2 );
+        ::DeleteItem( pS3 );
+    }
+    return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"
+#include "cur_arc.h" // MbArc - Эллиптическая дуга в двумерном пространстве
+#include <vector> // std::vector - динамический массив из стандартной библиотеки C++
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Центр окружностей и дуг в локальной СК
+    MbCartPoint cnt( 5, 5 );
+    // Построение окружности по центру и радиусу
+    const double RAD1 = 16;
+    MbArc* pc1 = new MbArc(cnt, RAD1);
+    // Окружность по центру и по точке на окружности
+    const double RAD2 = 14;
+    MbArc* pc2 = new MbArc( cnt, MbCartPoint(cnt.x + RAD2, cnt.y) );
+    // Дуга окружности: задается центр, радиус, точки-концы дуги и направление
+    // обхода от первой до второй концевой точки (-1 - по часовой стрелке, +1 - против).
+    // Координаты точек-концов дуги вычисляются с использованием координатных функций:
+    // x(t) = R*cos(t), y(t) = R*sin(t)
+    // Радиус-векторы концов дуги выбраны расположенными под углом 30 и 60 градусов к
+    // горизонтальной оси.
+    // Дуга pc3 строится по часовой стрелке, дуга pc4 - против
+    const double RAD3 = 12;
+    MbCartPoint p31(cnt.x + RAD3*cos(M_PI/6), cnt.y + RAD3*sin(M_PI/6) );
+    MbCartPoint p32(cnt.x + RAD3*cos(M_PI/3), cnt.y + RAD3*sin(M_PI/3) );
+    MbArc* pc3 = new MbArc( cnt, RAD3, p31, p32, -1 );
+    const double RAD4 = 10;
+    MbCartPoint p41(cnt.x + RAD4*cos(M_PI/6), cnt.y + RAD4*sin(M_PI/6) );
+    MbCartPoint p42(cnt.x + RAD4*cos(M_PI/3), cnt.y + RAD4*sin(M_PI/3) );
+    MbArc* pc4 = new MbArc( cnt, RAD4, p41, p42, 1 );
+    // Дуга окружности: задается центр, радиус, параметры точек-концов дуги и
+    // направление обхода дуги: -1 - по часовой стрелке, +1 - против
+    const double RAD5 = 8;
+    MbArc* pc5 = new MbArc( cnt, RAD5, M_PI/2, 3*M_PI/2, -1 );
+    const double RAD6 = 6;
+    MbArc* pc6 = new MbArc( cnt, RAD6, M_PI/2, 3*M_PI/2, 1 );
+    // Дуга окружности: по трем точкам.
+    // Координаты точек p71, p72 и p73, принадлежащих дуге окружностей,
+    // вычисляются в локальной СК окружности.
+    const double RAD7 = 4;
+    MbCartPoint p71( RAD7*cos(M_PI/6), RAD7*sin(M_PI/6) );
+    MbCartPoint p72( RAD7*cos(M_PI/2), RAD7*sin(M_PI/2) );
+    MbCartPoint p73( RAD7*cos(3*M_PI/2), RAD7*sin(3*M_PI/2) );
+    // Смещение координат точек для перемещения центра СК окружности в точку cnt
+    p71.Move( cnt );
+    p72.Move( cnt );
+    p73.Move( cnt );
+    MbArc* pc7 = new MbArc( p71, p72, p73 );
+    // Помещение указателей на окружности в массив для отображения с помощью цикла
+    std::vector<MbArc*> arrArcs = { pc1, pc2, pc3, pc4, pc5, pc6, pc7 };
+    for (int i = 0; i < arrArcs.size(); i++)
+    {
+        show( arrArcs[i], &pl );
+        ::DeleteItem( arrArcs[i] );
+    }
+    return true;
+}
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"
+#include "cur_arc.h" // MbArc - Эллиптическая дуга в двумерном пространстве
+#include "mb_cross_point.h" // MbCrossPoint - Точка пересечения двух кривых
+#include "action_point.h" // Функции-утилиты для операций с точками
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Граница 1: внешний эллипс
+    // Полуоси эллипса равны 120 и 60.
+    // Локальная СК pl1 совпадает с системой плоскости XOY системы координат pl.
+    // В конструкторе pl1 задается начало координат и угол поворота СК (в виде объекта
+    // класса MbDirection).
+    MbPlacement pl1( MbCartPoint(0,0), MbDirection(0.0) );
+    MbArc* pBound1 = new MbArc( 120, 60, pl1 );
+    show( Style( 2, RGB(0,0,255) ), pBound1, &pl );
+    // Граница 2: внутренняя окружность
+    MbArc* pBound2 = new MbArc( MbCartPoint(0,0), 20 );
+    show( Style( 2, RGB(0,0,255) ), pBound2, &pl );
+    // Первый эллипс для построения розетки
+    // Локальная СК для этого эллипса размещается так, чтобы его правый полюс
+    // располагался в точке (0, 0), а большая ось лежала на оси OX
+    const double RADA = 110, RADB = 60;
+    MbPlacement plEllipse( MbCartPoint( -RADA, 0 ), MbDirection(0.0) );
+    MbArc* pEllipse = new MbArc( RADA, RADB, plEllipse );
+    // Построение эллипсов розетки - они размещаются по окружности с равным угловым шагом
+    const int ELLIPSE_CNT = 30;
+    for (int i = 0; i < ELLIPSE_CNT; i++)
+    {
+        // Очередной эллипс pEl получается поворотом первого эллипса на угол angle
+        MbArc* pEl = new MbArc( *pEllipse );
+        double angle = 2*M_PI/ELLIPSE_CNT*i;
+        pEl->Rotate(MbCartPoint(0, 0), MbDirection(angle));
+        // Вычисление точек пересечения pEl с внешней границей-эллипсом pBound1
+        // В классе MbCrossPoint хранятся координаты точки пересечения, параметрические
+        // координаты этой точки на обеих кривых, а также тип (пересечение или касание).
+        SArray<MbCrossPoint> arrExt;
+        int pntCntExt = ::IntersectTwoCurves( *pEl, *pBound1, arrExt );
+        // Вычисление точек пересечения pEl с внутренней границей-окружностью pBound2
+        SArray<MbCrossPoint> arrInt;
+        int pntCntInt = ::IntersectTwoCurves( *pEl, *pBound2, arrInt );
+        // Если вычислено предполагаемое количество точек пересечения (должно быть по 2
+        // с каждой границей), то строятся дуги эллипса pEl с концами в найденных точках
+        if ( pntCntExt == 2 && pntCntInt == 2 )
+        {
+            MbArc* pElArc1 = new MbArc( pEl->GetRadiusA(), pEl->GetRadiusB(),
+            pEl->GetPlacement(), arrInt[0].p, arrExt[0].p, 1 );
+            MbArc* pElArc2 = new MbArc( pEl->GetRadiusA(), pEl->GetRadiusB(),
+            pEl->GetPlacement(), arrInt[1].p, arrExt[1].p, -1 );
+            show( Style( 2, RGB(0,0,255) ), pElArc1, &pl );
+            show( Style( 2, RGB(0,0,255) ), pElArc2, &pl );
+            ::DeleteItem( pElArc1 );
+            ::DeleteItem( pElArc2 );
+        }
+        // Объект pEl не передавался для отображения, поэтому при следующем вызове
+        // он будет удален (т.к. его счетчик ссылок уменьшится до 0)
+        ::DeleteItem( pEl );
+    }
+    ::DeleteItem( pBound1 );
+    ::DeleteItem( pBound2 );
+    ::DeleteItem( pEllipse );
+    return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+// MbCharacterCurve - кривая, заданная в символическом виде
+#include "cur_character_curve.h"
+#include "function.h" // MbFunction - скалярная функция одной переменной
+#include "function_factory.h" // MbFunctionFactory – генератор объектов-функций
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Объект – генератор функций (осуществляет синтаксический разбор выражения
+    // функции и готовит служебные структуры данных для вычисления значений функции).
+    MbFunctionFactory ff;
+    // Координатные функции в символическом виде для окружности
+    // с центром в начале координат и радиусом 10
+    c3d::string_t sXFunc = _T("10*cos(t)");
+    c3d::string_t sYFunc = _T("10*sin(t)");
+    // Предельные значения параметра t
+    const double T_MIN = 0.0, T_MAX = 2*M_PI;
+    // Координатные функции в виде объектов MbFunction
+    MbFunction* pXFunc = ff.CreateAnalyticalFunction( sXFunc, _T("t"), T_MIN, T_MAX );
+    MbFunction* pYFunc = ff.CreateAnalyticalFunction( sYFunc, _T("t"), T_MIN, T_MAX );
+    if ( pXFunc != nullptr  && pYFunc != nullptr )
+    {
+        // Локальная двумерная СК кривой - совпадает с XOY трехмерной системы pl
+        MbPlacement plCurve( MbCartPoint(0,0), MbDirection(0.0) );
+        // Объект-кривая
+        MbCharacterCurve* pCurve = new MbCharacterCurve( *pXFunc, *pYFunc, ls_CartesSystem,
+        plCurve, T_MIN, T_MAX );
+        // Отображение кривой
+        if ( pCurve )
+            show( Style( 1, RGB(0,0,255) ), pCurve, &pl );
+        ::DeleteItem( pCurve );
+    }
+    // Удаление динамически созданных объектов-функций
+    ::DeleteItem( pXFunc );
+    ::DeleteItem( pYFunc );
+    return true;
+}
+[end]
+[id = "code_block_7"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+#include "cur_polyline.h" // MbPolyline - ломаная линия
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Характеристики прямоугольного импульса
+    const double PERIOD = 8; // Период
+    const double DURATION = 3; // Длительность
+    const double AMPL = 7; // Амплитуда
+    // Массив из 5 точек - вершин ломаной, представляющей один
+    // прямоугольный импульс с началом в точке (0, 0)
+    SArray<MbCartPoint> arrPnts(5);
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(0, AMPL ) );
+    arrPnts.Add( MbCartPoint(DURATION, AMPL) );
+    arrPnts.Add( MbCartPoint(DURATION, 0) );
+    arrPnts.Add( MbCartPoint(PERIOD, 0) );
+    // Ломаная линия с вершинами arrPnts
+    MbPolyline* pPolyline = new MbPolyline( arrPnts, false /* Флаг незамкнутой линии */);
+    // Добавление к ломаной линии COPY_CNT экземпляров импульса
+    const int COPY_CNT = 9;
+    for (int i = 0; i < COPY_CNT; i++)
+    {
+        // Каждая точка в очередной копии смещается на один период.
+        // Эти смещения накапливаются в массиве arrPnts.
+        for (int j = 0; j < arrPnts.size(); j++)
+        {
+            arrPnts[j].Move( PERIOD, 0 );
+            pPolyline->AddPoint( arrPnts[j] );
+        }
+    }
+    // Смещение ломаной, чтобы ее первая точка располагалась в точке (5, 5)
+    pPolyline->Move( MbVector(5, 5) );
+    // Отображение ломаной
+    show( Style( 1, RGB(0,0,255) ), pPolyline, &pl );
+    ::DeleteItem( pPolyline );
+    return true;
+}
+[end]
+[id = "code_block_8"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+#include "cur_polyline.h" // MbPolyline - ломаная линия
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Количество сторон многоугольника
+    const int SIDE_CNT = 5;
+    // Радиус описывающей окружности многоугольника
+    const double RAD = 5.0;
+    // Массив для хранения вершин ломаной
+    SArray<MbCartPoint> arrPnts(SIDE_CNT);
+    // Вычисление вершин ломаной равномерным делением окружности
+    for (int i = 0; i < SIDE_CNT; i++)
+    {
+        // Угловое положение i-й вершины на описывающей окружности.
+        // Угловое положение начальной вершины - M_PI/2 (эта вершина
+        // расположена на вертикальной оси).
+        double angle = M_PI/2 + 2*M_PI/SIDE_CNT*i;
+        MbCartPoint pnt( RAD*cos(angle), RAD*sin(angle) );
+        arrPnts.Add( pnt );
+    }
+    // Замкнутая ломаная линия с вершинами arrPnts
+    MbPolyline* pPolyline = new MbPolyline( arrPnts, true /* Флаг замкнутой линии */ );
+    // Отображение ломаной
+    if ( pPolyline )
+        show( Style( 1, RGB(0,0,255) ), pPolyline, &pl );
+    ::DeleteItem( pPolyline );
+    return true;
+}
+[end]

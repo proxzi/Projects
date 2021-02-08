@@ -1,0 +1,1000 @@
+[id = "code_block_1"]
+[begin]
+#include "setup.h"
+#include <action_solid.h> 
+
+using namespace c3d;
+
+// Построение исходного твердого тела в виде цилиндра, расположенного по центру
+// прямоугольного параллелепипеда (квадратной пластины)
+void CreateSourceSolid(MbSolid*& _pSolid)
+{
+	// Объект-именователь для построения элементарных тел
+	MbSNameMaker elNames(ct_ElementarySolid, MbSNameMaker::i_SideNone); 
+
+	// 1) Построение цилиндра
+	MbSolid* pCyl = NULL;
+	{
+		SArray<MbCartPoint3D> pntsCyl(3);
+		pntsCyl.Add(MbCartPoint3D(50, 0, 50));
+		pntsCyl.Add(MbCartPoint3D(50, 50, 50));
+		pntsCyl.Add(MbCartPoint3D(75, 0, 50));
+		::ElementarySolid(pntsCyl, et_Cylinder, elNames, pCyl);
+	} 
+
+	// 2) Построение квадратной пластины
+	MbSolid* pBlock = NULL;
+	{
+		SArray<MbCartPoint3D> pntsBlock(4);
+		pntsBlock.Add(MbCartPoint3D(0, 0, 0));
+		pntsBlock.Add(MbCartPoint3D(0, 0, 100));
+		pntsBlock.Add(MbCartPoint3D(100, 0, 0));
+		pntsBlock.Add(MbCartPoint3D(0, 20, 0));
+		::ElementarySolid(pntsBlock, et_Block, elNames, pBlock);
+	} 
+
+	// 3) Объединение двух тел
+	MbSNameMaker operBoolNames(ct_BooleanSolid, MbSNameMaker::i_SideNone, 0);
+	MbBooleanFlags flagsBool;
+	flagsBool.InitBoolean(true);
+	flagsBool.SetMergingFaces(true);
+	flagsBool.SetMergingEdges(true);
+	::BooleanResult(*pCyl, cm_Copy, *pBlock, cm_Copy, bo_Union,
+	flagsBool, operBoolNames, _pSolid);
+	// 4) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pBlock);
+	::DeleteItem(pCyl);
+	*/
+} 
+
+
+bool run()
+{
+	// 1) Построение исходного тела с помощью вспомогательной функции
+	MbSolid* pSourceSolid = NULL;
+	CreateSourceSolid(pSourceSolid); 
+
+	// 2) Объект-именователь для операции скругления ребер
+	MbSNameMaker filletNames(ct_FilletSolid, MbSNameMaker::i_SideNone, 0); 
+
+	// 3) Указание значений параметров операции скругления ребер
+	SmoothValues params;
+	// Радиусы кривизны на двух скругляемых поверхностях
+	params.distance1 = 10;
+	params.distance2 = 20;
+	// Тип сопряжения – скругление по двум радиусам
+	params.form = st_Fillet;
+	// Форма профиля сопряжения - окружность
+	params.conic = 0;
+	// Требуется скруглять только ребра, переданные во входном массиве
+	params.prolong = false;
+	// Способ скругления троек ребер
+	params.smoothCorner = SmoothValues::ec_uniform;
+	// Флаг сохранения кромки – режим сохранения поверхности
+	params.keepCant = ts_negative;
+	// Строгое скругление
+	params.strict = true; 
+
+	// 4) Формирование массива с ребрами для скругления.
+	// Запрос всех ребер исходного тела
+	RPArray<MbCurveEdge> allEdges(4, 1);
+	pSourceSolid->GetEdges(allEdges);
+	// В массив ребер для скругления помещается только одно ребро
+	RPArray<MbCurveEdge> initCurves(4, 1);
+	initCurves.Add(allEdges[4]); 
+
+	// 5) Массив граней для обрезки – в данном примере пустой
+	RPArray<MbFace> initBounds(0, 1); 
+
+	// 6) Вызов функции скругления ребер.
+	// В результате выполняется скругление одного ребра – окружности,
+	// по которой в исходном теле соединены цилиндр и пластина.
+	MbSolid* pResult = NULL;
+	MbResultType res = ::FilletSolid(*pSourceSolid, cm_Copy, initCurves, initBounds,
+	params, filletNames, pResult);
+	
+	// 7) Отображение тела после скругления ребра
+	if (res == rt_Success)
+		show(Style(1, LIGHTGRAY), pResult); 
+
+	// 8) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pSourceSolid);
+	::DeleteItem(pResult);
+	*/
+	return true;
+}
+[end]
+[id = "code_block_2"]
+[begin]
+#include "setup.h"
+#include <cur_nurbs.h>
+#include <action_solid.h> 
+#include <cur_polyline.h>
+#include <surf_plane.h>
+using namespace c3d;
+
+// Построение образующей для исходного тела выдавливания
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+	// Образующая состоит из двух контуров - внешнего и внутреннего.
+	// У внешнего контура три стороны как у прямоугольника,
+	// а четвертая представляет собой сплайн.
+	// Внутренний контур - прямоугольник для формирования
+	// в дальнейшем отверстия у тела выдавливания. 
+
+	// 1) Построение внешнего контура
+	MbContour* pContourExt = NULL;
+	{
+		// Незамкнутая ломаная кривая содержит 3 стороны для внешнего контура
+		SArray<MbCartPoint> arrPnts(4);
+		arrPnts.Add(MbCartPoint(0, 50));
+		arrPnts.Add(MbCartPoint(0, 0));
+		arrPnts.Add(MbCartPoint(100, 0));
+		arrPnts.Add(MbCartPoint(100, 50));
+		MbPolyline* pPolyline = new MbPolyline(arrPnts, false); 
+
+		// Незамкнутый сплайн представляет четвертую сторону для внешнего контура
+		SArray<MbCartPoint> arrSplPnts(4);
+		arrSplPnts.Add(MbCartPoint(100, 50));
+		arrSplPnts.Add(MbCartPoint(60, 40));
+		arrSplPnts.Add(MbCartPoint(30, 60));
+		arrSplPnts.Add(MbCartPoint(0, 50));
+		ptrdiff_t degree = 3;
+		MbNurbs* pSpline = new MbNurbs();
+		pSpline->Init(degree, arrSplPnts, false); 
+
+
+		// Построение внешнего контура по двум кривым - ломаной и сплайну
+		RPArray<MbCurve> arrCurve(2);
+		arrCurve.Add(pPolyline);
+		arrCurve.Add(pSpline);
+		pContourExt = new MbContour(arrCurve, true); 
+
+		/*
+		::DeleteItem(pPolyline);
+		::DeleteItem(pSpline);
+		*/
+	} 
+
+	// 2) Построение внутреннего контура
+	MbContour* pContourIn = NULL;
+	{
+		// Замкнутая ломаная кривая в виде прямоугольника
+		SArray<MbCartPoint> arrPnts(4);
+		arrPnts.Add(MbCartPoint(10, 10));
+		arrPnts.Add(MbCartPoint(90, 10));
+		arrPnts.Add(MbCartPoint(90, 30));
+		arrPnts.Add(MbCartPoint(10, 30)); 
+
+
+		MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+		pContourIn = new MbContour(*pPolyline, true); 
+
+
+		//::DeleteItem(pPolyline);
+	} 
+
+	// Возврат образующей в виде пары контуров
+	_arrContours.push_back(pContourExt);
+	_arrContours.push_back(pContourIn);
+} 
+
+// Построение исходного твердого тела выдавливания
+void CreateSourceSolid(MbSolid*& _pSolid)
+{
+	const double DEG_TO_RAD = M_PI/180.0; 
+
+	// Получение образующей тела выдавливания
+	RPArray<MbContour> arrContours;
+	CreateSketch(arrContours); 
+
+	// Вызов операции построения тела выдавливания
+	MbSNameMaker operNames(ct_CurveExtrusionSolid, MbSNameMaker::i_SideNone, 0);
+	MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0),
+		MbCartPoint3D(1, 0, 0), MbCartPoint3D(0, 1, 0));
+	MbSweptData sweptData( *pPlaneXY, arrContours );
+	MbVector3D dir(0, 0, -1);
+	const double HEIGHT_FORWARD = 20.0, HEIGHT_BACKWARD = 0;
+	ExtrusionValues extrusionParams(HEIGHT_FORWARD, HEIGHT_BACKWARD);
+	PArray<MbSNameMaker> contourNames(0, 1, false);
+	::ExtrusionSolid(sweptData, dir, NULL, NULL, false, extrusionParams,
+		operNames, contourNames, _pSolid); 
+
+	// Поворот тела выдавливания, чтобы одна из его наибольших сторон совпала
+	// с плоскостью XZ глобальной СК
+	_pSolid->Rotate( MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0),
+		MbCartPoint3D(1, 0, 0))), 90*DEG_TO_RAD ); 
+
+	//::DeleteItem(pPlaneXY);
+}
+
+bool run()
+{
+	// 1) Построение исходного тела с помощью вспомогательной функции
+	MbSolid* pSourceSolid = NULL;
+	CreateSourceSolid(pSourceSolid); 
+
+	// 2) Объект-именователь для операции скругления ребер
+	MbSNameMaker filletNames(ct_FilletSolid, MbSNameMaker::i_SideNone, 0); 
+
+	// 3) Указание значений параметров операции скругления ребер
+	SmoothValues params;
+	// Радиусы кривизны на двух скругляемых поверхностях
+	params.distance1 = params.distance2 = 4;
+	// Тип сопряжения – скругление по двум радиусам
+	params.form = st_Fillet;
+	// Форма профиля сопряжения - окружность
+	params.conic = 0;
+	// Требуется скруглять только ребра, переданные во входном массиве
+	params.prolong = false;
+	// Способ скругления троек ребер
+	params.smoothCorner = SmoothValues::ec_uniform;
+	// Флаг сохранения кромки – режим сохранения поверхности
+	params.keepCant = ts_negative;
+	// Строгое скругление  params.strict = true;
+	// Задание границ скругления
+	params.begLength = 15;
+	params.endLength = 15; 
+
+	// 4) Формирование массива с ребрами для скругления.
+	// Запрос всех ребер исходного тела
+	RPArray<MbCurveEdge> allEdges(4, 1);
+	pSourceSolid->GetEdges(allEdges);
+	// В массив ребер для скругления помещается только одно ребро
+	RPArray<MbCurveEdge> initCurves(4, 1);
+	initCurves.Add(allEdges[0]); 
+
+	// 5) Массив граней для обрезки – в данном примере пустой
+	RPArray<MbFace> initBounds(0, 1);  
+
+	// 6) Вызов функции скругления ребер.
+	MbSolid * pResult = NULL;
+	MbResultType res = ::FilletSolid(*pSourceSolid, cm_Copy, initCurves, initBounds,
+		params, filletNames, pResult); 
+
+	// 7) Отображение тела после скругления
+	if (res == rt_Success)
+		show(Style(1, LIGHTGRAY), pResult); 
+
+	// 8) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pSourceSolid);
+	::DeleteItem(pResult);
+	*/
+	return true;
+}
+[end]
+[id = "code_block_3"]
+[begin]
+#include "setup.h"
+#include <action_solid.h> 
+
+using namespace c3d;
+
+// Построение исходного твердого тела в виде объединения трех элементарных тел -
+// двух параллелепипедов и цилиндра.
+void CreateSourceSolid(MbSolid*& _pSolid)
+{
+	// Объект-именователь для построения элементарных тел
+	MbSNameMaker elNames(ct_ElementarySolid, MbSNameMaker::i_SideNone);
+	// 1) Квадратная пластина - основание детали
+	MbSolid* pBlockBase = NULL;
+	{
+		SArray<MbCartPoint3D> pnts(4);
+		pnts.Add(MbCartPoint3D(0, 0, 0));
+		pnts.Add(MbCartPoint3D(0, 0, 100));
+		pnts.Add(MbCartPoint3D(100, 0, 0));
+		pnts.Add(MbCartPoint3D(0, 20, 0));
+		::ElementarySolid(pnts, et_Block, elNames, pBlockBase);
+	} 
+
+	// 2) Цилиндр сверху пластины-основания
+	MbSolid* pCylTop = NULL;
+	{
+		SArray<MbCartPoint3D> pnts(3);
+		pnts.Add(MbCartPoint3D(50, 0, 50));
+		pnts.Add(MbCartPoint3D(50, 60, 50));
+		pnts.Add(MbCartPoint3D(50, 0, 80));
+		::ElementarySolid(pnts, et_Cylinder, elNames, pCylTop);
+	} 
+
+	// 3) Прямоугольный параллелепипед сверху пластины-основания
+	MbSolid* pBlockTop = NULL;
+	{
+		SArray<MbCartPoint3D> pnts(4);
+		pnts.Add(MbCartPoint3D(20, 0, 20));
+		pnts.Add(MbCartPoint3D(20, 0, 50));
+		pnts.Add(MbCartPoint3D(80, 0, 20));
+		pnts.Add(MbCartPoint3D(20, 60, 20));
+		::ElementarySolid(pnts, et_Block, elNames, pBlockTop);
+	}
+	// 4) Объединение трех элементарных тел в возвращаемое исходное тело
+	MbSNameMaker operBoolNames(ct_BooleanSolid, MbSNameMaker::i_SideNone, 0);
+	MbBooleanFlags flagsBool;
+	flagsBool.InitBoolean(true);
+	flagsBool.SetMergingFaces(true);
+	flagsBool.SetMergingEdges(true);
+	MbSolid * resSolid1 = NULL;
+	::BooleanResult(*pCylTop, cm_Copy, *pBlockBase, cm_Copy, bo_Union,flagsBool, operBoolNames, resSolid1);
+	::BooleanResult(*resSolid1, cm_Copy, *pBlockTop, cm_Copy, bo_Union,flagsBool, operBoolNames, _pSolid); 
+
+	// 5) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pBlockBase);
+	::DeleteItem(pCylTop);
+	::DeleteItem(pBlockTop);
+	::DeleteItem(resSolid1);
+	*/
+} 
+
+
+bool run()
+{
+	// 1) Построение исходного тела с помощью вспомогательной функции
+	MbSolid* pSourceSolid = NULL;
+	CreateSourceSolid(pSourceSolid); 
+
+	// 2) Объект-именователь для операции скругления ребер
+	MbSNameMaker filletNames(ct_FilletSolid, MbSNameMaker::i_SideNone, 0);
+	// 3) Указание значений параметров операции скругления ребер
+	SmoothValues params;
+	// Радиусы кривизны на двух скругляемых поверхностях
+	params.distance1 = 10;
+	params.distance2 = 20;
+	// Тип сопряжения – скругление по двум радиусам
+	params.form = st_Fillet;
+	// Форма профиля сопряжения - окружность
+	params.conic = 0;
+	// Требуется скруглять ребра, гладко стыкующиеся с ребрами из входного массива
+	params.prolong = true;
+	// Способ скругления троек ребер
+	params.smoothCorner = SmoothValues::ec_uniform;
+	// Флаг сохранения кромки – режим сохранения поверхности
+	params.keepCant = ts_neutral;
+	// Строгое скругление
+	params.strict = false; 
+
+	// 4) Формирование массива с ребрами для скругления.
+	// Запрос всех ребер исходного тела
+	RPArray<MbCurveEdge> allEdges(4, 1);
+	pSourceSolid->GetEdges(allEdges);
+	// В массив ребер для скругления помещается только одно ребро
+	RPArray<MbCurveEdge> initCurves(4, 1);
+	initCurves.Add(allEdges[12]); 
+
+	// 5) Массив граней для обрезки
+	RPArray<MbFace> initBounds(0, 1);  
+
+	// 6) Вызов функции скругления ребер.
+	MbSolid* pResult = NULL;
+	MbResultType res = ::FilletSolid(*pSourceSolid, cm_Copy, initCurves, initBounds,
+		params, filletNames, pResult);
+	if (res == rt_Success)
+		show(Style(1, LIGHTGRAY), pResult); 
+
+	// 7) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pSourceSolid);
+	::DeleteItem(pResult);
+	*/
+	return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"
+#include <action_solid.h> 
+
+using namespace c3d;
+
+// Построение исходного твердого тела
+void CreateSourceSolid(MbSolid*& _pSolid)
+{
+	// Объект-именователь для построения элементарных тел
+	MbSNameMaker elNames(ct_ElementarySolid, MbSNameMaker::i_SideNone); 
+
+	// 1) Основание в виде прямоугольной пластины
+	MbSolid* pBlockBase = NULL;
+	{
+		SArray<MbCartPoint3D> pnts(4);
+		pnts.Add(MbCartPoint3D(0, 0, 0));
+		pnts.Add(MbCartPoint3D(0, 0, 200));
+		pnts.Add(MbCartPoint3D(100, 0, 0));
+		pnts.Add(MbCartPoint3D(0, 20, 0));
+		::ElementarySolid(pnts, et_Block, elNames, pBlockBase);
+	} 
+
+	// 2) Цилиндр для части первого профильного отверстия
+	MbSolid* pCylPartHole1 = NULL;
+	{
+		SArray<MbCartPoint3D> pnts(3);
+		pnts.Add(MbCartPoint3D(50, 0, 50));
+		pnts.Add(MbCartPoint3D(50, 20, 50));
+		pnts.Add(MbCartPoint3D(50, 0, 80));
+		::ElementarySolid(pnts, et_Cylinder, elNames, pCylPartHole1);
+	} 
+
+	// 3) Параллелепипед - вторая часть первого профильного отверстия
+	// (в комбинации с цилиндром)
+	MbSolid* pBlockPartHole1 = NULL;
+	{
+		SArray<MbCartPoint3D> pnts(4);
+		pnts.Add(MbCartPoint3D(20, 0, 20));
+		pnts.Add(MbCartPoint3D(20, 0, 50));
+		pnts.Add(MbCartPoint3D(80, 0, 20));
+		pnts.Add(MbCartPoint3D(20, 20, 20));
+		::ElementarySolid(pnts, et_Block, elNames, pBlockPartHole1);
+	} 
+
+	// 4) Параллелепипед - для построения второго профильного отверстия
+	MbSolid* pBlockHole2 = NULL;
+	{
+		SArray<MbCartPoint3D> pnts(4);
+		pnts.Add(MbCartPoint3D(20, 0, 120));
+		pnts.Add(MbCartPoint3D(20, 0, 180));
+		pnts.Add(MbCartPoint3D(80, 0, 120));
+		pnts.Add(MbCartPoint3D(20, 20, 120));
+		::ElementarySolid(pnts, et_Block, elNames, pBlockHole2);
+	} 
+
+	// 5) Параметры для выполнения булевых операций
+	MbSNameMaker operBoolNames(ct_BooleanSolid, MbSNameMaker::i_SideNone, 0);
+	MbBooleanFlags flagsBool;
+	flagsBool.InitBoolean(true);
+	flagsBool.SetMergingFaces(true);
+	flagsBool.SetMergingEdges(true); 
+
+	// 6) Выполнение булевых операций
+	// Объединение цилиндра и параллелепипеда для построения вспомогательного тела,
+	// которое будет применяться для построения первого профильного отверстия:
+	// pSolid1 = pBlockPartHole1 + pCylPartHole1
+	MbSolid * pSolid1 = NULL;
+	::BooleanResult(*pBlockPartHole1, cm_Copy, *pCylPartHole1, cm_Copy, bo_Union,
+		flagsBool, operBoolNames, pSolid1);
+	// Вычитание вспомогательного тела для формирования первого профильного отверстия
+	// pSolid2 = pBlockBase - pSolid1
+	MbSolid * pSolid2 = NULL;
+	::BooleanResult(*pBlockBase, cm_Copy, *pSolid1, cm_Copy, bo_Difference,
+		flagsBool, operBoolNames, pSolid2);
+	// Вычитание для формирования второго профильного отверстия:
+	// _pSolid = pSolid2 - pBlockHole2
+	::BooleanResult(*pSolid2, cm_Copy, *pBlockHole2, cm_Copy, bo_Difference,
+		flagsBool, operBoolNames, _pSolid); 
+
+	// 5) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pBlockBase);
+	::DeleteItem(pBlockPartHole1);
+	::DeleteItem(pCylPartHole1);
+	::DeleteItem(pBlockHole2);
+	::DeleteItem(pSolid1);
+	::DeleteItem(pSolid2);
+	*/
+}
+
+bool run()
+{
+	// 1) Построение исходного тела с помощью вспомогательной функции
+	MbSolid* pSourceSolid = NULL;
+	CreateSourceSolid(pSourceSolid); 
+
+	// 2) Объект-именователь для операции построения фасок
+	MbSNameMaker chamferNames(ct_FilletSolid, MbSNameMaker::i_SideNone, 0); 
+
+	// 3) Указание значений параметров операции построения фасок
+	SmoothValues params;
+	// Длины катетов фаски
+	params.distance1 = 4;
+	params.distance2 = 4;
+	// Тип фаски - построение фаски с заданными катетами
+	params.form = st_Chamfer;
+	// Режим автоматического скругления ребер, гладко стыкующиеся с ребрами
+	// из входного массива
+	params.prolong = true;
+	// Способ скругления троек ребер
+	params.smoothCorner = SmoothValues::ec_uniform; 
+
+	// 4) Формирование массива с ребрами для скругления.
+	// Запрос всех ребер исходного тела
+	RPArray<MbCurveEdge> allEdges(4, 1);
+	pSourceSolid->GetEdges(allEdges);
+	// Массив ребер для скругления
+	RPArray<MbCurveEdge> initCurves(4, 1);
+	// Заполнение массива для построения фасок по всем ребрам (рис. 10).
+	for (int i = 0; i < 35; i++)
+	initCurves.Add(allEdges[i]);
+	// Ребро для построения фаски на полукруглом отверстии (рис. 11).
+	// Для получения тела, как на рис. 11, надо закомментировать предыдущий цикл
+	// и снять комментарий со следующей строки.
+	// initCurves.Add(allEdges[20]); 
+
+	// 5) Массив граней для обрезки при неоднозначном выполнении метода - пустой
+	RPArray<MbFace> initBounds(0, 1);  
+
+	// 6) Вызов функции построения фасок
+	MbSolid* pResult = NULL;
+	MbResultType res = ::ChamferSolid(*pSourceSolid, cm_Copy, initCurves,
+	params, chamferNames, pResult);
+	if (res == rt_Success)
+		show(Style(1, LIGHTGRAY), pResult); 
+
+	// 7) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pSourceSolid);
+	::DeleteItem(pResult);
+	*/
+	return true;
+} 
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"
+#include <action_solid.h> 
+
+using namespace c3d;
+// Построение исходного твердого тела в виде прямоугольного
+// параллелепипеда на цилиндрическом основании.
+void CreateSourceSolid(MbSolid*& _pSolid)
+{
+	// Объект-именователь для построения элементарных тел
+	MbSNameMaker elNames(ct_ElementarySolid, MbSNameMaker::i_SideNone); 
+
+	// 1) Цилиндрическое основание
+	MbSolid* pCylBase = NULL;
+	{
+	SArray<MbCartPoint3D> pnts(3);
+	pnts.Add(MbCartPoint3D(50, 0, 50));
+	pnts.Add(MbCartPoint3D(50, 20, 50));
+	pnts.Add(MbCartPoint3D(100, 0, 50));
+	::ElementarySolid(pnts, et_Cylinder, elNames, pCylBase);
+	} 
+
+	// 2) Прямоугольный параллелепипед
+	MbSolid* pBlock = NULL;
+	{
+	SArray<MbCartPoint3D> pnts(4);
+	pnts.Add(MbCartPoint3D(20, 0, 20));
+	pnts.Add(MbCartPoint3D(20, 0, 50));
+	pnts.Add(MbCartPoint3D(80, 0, 20));
+	pnts.Add(MbCartPoint3D(20, 60, 20));
+	::ElementarySolid(pnts, et_Block, elNames, pBlock);
+	} 
+
+	// 3) Булева операция объединения _pSolid = pCylBase + pBlock
+	MbSNameMaker operBoolNames(ct_BooleanSolid, MbSNameMaker::i_SideNone, 0);
+	MbBooleanFlags flagsBool;
+	flagsBool.InitBoolean(true);
+	flagsBool.SetMergingFaces(true);
+	flagsBool.SetMergingEdges(true);
+	::BooleanResult( *pBlock, cm_Copy, *pCylBase, cm_Copy, bo_Union,
+		flagsBool, operBoolNames, _pSolid ); 
+
+	// 4) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pCylBase);
+	::DeleteItem(pBlock);
+	*/
+} 
+
+
+bool run()
+{
+	// 1) Построение исходного тела с помощью вспомогательной функции
+	MbSolid* pSourceSolid = NULL;
+	CreateSourceSolid(pSourceSolid); 
+
+	// 2) Параметры для вызова функции уклонения граней
+	MbSNameMaker operNames(ct_DraftSolid, MbSNameMaker::i_SideNone, 0); 
+
+	// Локальная СК, относительно плоскости XY которой задается наклон граней.
+	// Плоскость XY этой СК перпендикулярна цилиндрическому основанию и проходит
+	// через его центральную ось.
+	MbPlacement3D plLocal;
+	const double DEG_TO_RAD = M_PI / 180.0;
+	plLocal.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0))),
+		-90 * DEG_TO_RAD);
+	plLocal.Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(50, 0, 0))); 
+
+	// Режим обработки всех указанных граней
+	MbeFacePropagation fp = fp_All;
+	// Угол наклона граней
+	double angle = 20 * DEG_TO_RAD;
+	// Направление наклона - прямое
+	bool reverse = false; 
+
+	// Запрос всех граней исходного тела
+	RPArray<MbFace> allFaces;
+	pSourceSolid->GetFaces(allFaces);
+	// Массив обрабатываемых граней
+	RPArray<MbFace> faces;
+	faces.Add(allFaces[1]);
+	faces.Add(allFaces[2]);
+	faces.Add(allFaces[4]);
+	faces.Add(allFaces[6]); 
+
+	// 3) Вызов функции уклонения граней
+	MbSolid* pResult = NULL;
+	MbResultType res = ::DraftSolid(*pSourceSolid, cm_Copy, plLocal, angle, faces,
+		fp, reverse, operNames, pResult);
+	if (res == rt_Success)
+		show(Style(1, LIGHTGRAY), pResult); 
+
+	// 4) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pSourceSolid);
+	::DeleteItem(pResult);
+	*/
+	return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+#include <surf_plane.h>
+#include <action_solid.h> 
+
+using namespace c3d;
+
+bool run() {
+	// 1) Построение исходного тела - параллелепипеда
+	MbSolid* pBlock = NULL;
+	{
+	MbSNameMaker elNames(1, MbSNameMaker::i_SideNone, 0);
+	SArray<MbCartPoint3D> pnts(4);
+	pnts.Add(MbCartPoint3D(0, 0, 0));
+	pnts.Add(MbCartPoint3D(0, 0, 200));
+	pnts.Add(MbCartPoint3D(200, 0, 0));
+	pnts.Add(MbCartPoint3D(0, 100, 0));
+	::ElementarySolid(pnts, et_Block, elNames, pBlock);
+	} 
+
+	// 2) Построение отверстия в исходном теле
+	MbSolid* pBlockHole = NULL;
+	{
+	// Объект-именователь для операции построения отверстия
+	MbSNameMaker holeNames(ct_HoleSolid, MbSNameMaker::i_SideNone, 0); 
+
+
+	// Локальная СК, задающая положение вспомогательного тела - образа отверстия.
+	const double DEG_TO_RAD = M_PI / 180.0;
+	MbPlacement3D plHole(MbCartPoint3D(0, 0, 0));
+	plHole.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0))),
+		90 * DEG_TO_RAD);
+	plHole.Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(100, 100, 100)));  
+
+	// Объект с параметрами операции построения отверстия, которые
+	// определяют тип и форму вспомогательного тела.
+	BorerValues params;
+	// Простое цилиндрическое отверстие (рис. 19а)
+	params.type = BorerValues::bt_SimpleCylinder;
+
+	// Двойное цилиндрическое отверстие (рис. 19б)
+	// params.type = BorerValues::bt_TwofoldCylinder;
+	params.diameter = 40;
+	
+	// Диаметр отверстия
+	params.depth = 60;
+
+	// Глубина отверстия
+	params.spikeAngle = 120 * DEG_TO_RAD;
+	// Угол раствора конца отверстия
+	// Направление оси отверстия - в отрицательном направлении оси Z локальной СК
+
+	params.down = false;
+	// Атрибуты, используемые при построении двойного цилиндрического отверстия
+	params.capDiameter = 50;
+	// Диаметр головки
+	params.capDepth = 5;
+	// Глубина головки 
+	// Вызов функции для построения отверстия в теле pBlock
+	::HoleSolid(pBlock, cm_Copy, plHole, params, holeNames, pBlockHole);
+	}
+
+	// 3) Сечение тела с отверстием плоскостью для последующего отображения
+	MbSolid* pBlockCut = NULL;
+	{
+	// Построение секущей плоскости
+
+	MbPlane* pPlane = new MbPlane(MbCartPoint3D(0, 0, 100), MbCartPoint3D(1, 0, 100),
+						MbCartPoint3D(0, 1, 100));
+	// Флаг сохранения части тела, расположенной снизу секущей плоскости
+
+	int partNum = -1; 
+
+
+	// Объект-именователь для операции сечения поверхностью
+	MbSNameMaker cutNames(ct_CuttingSolid, MbSNameMaker::i_SideNone, 0);
+	// Тело при построении сечения считается замкнутым
+	bool closed = true;
+	// Флаги объединения общих граней и ребер
+	MbMergingFlags mergeFlags(true, true);
+	// Вызов функции построения сечения тела
+	::SolidCutting( *pBlockHole, cm_Copy, *pPlane, partNum,
+		cutNames, closed, mergeFlags, pBlockCut );
+	::DeleteItem(pPlane);
+	}
+	// 4) Отображение части тела, полученной после сечения плоскостью
+	show(Style(1, LIGHTGRAY), pBlockCut); 
+
+	// 5) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pBlock);
+	::DeleteItem(pBlockHole);
+	::DeleteItem(pBlockCut);
+	*/
+	return true;
+}
+[end]
+[id = "code_block_7"]
+[begin]
+#include "setup.h"
+#include <action_solid.h> 
+#include <surf_plane.h>
+using namespace c3d;
+ 
+bool run()
+{
+	// 1) Построение исходного тела - параллелепипеда
+	MbSolid* pBlock = NULL;
+	{
+	MbSNameMaker elNames(1, MbSNameMaker::i_SideNone, 0);
+	SArray<MbCartPoint3D> pnts(4);
+	pnts.Add(MbCartPoint3D(0, 0, 0));
+	pnts.Add(MbCartPoint3D(0, 0, 200));
+	pnts.Add(MbCartPoint3D(200, 0, 0));
+	pnts.Add(MbCartPoint3D(0, 100, 0));
+	::ElementarySolid(pnts, et_Block, elNames, pBlock);
+	} 
+
+	// 2) Построение кармана в исходном теле
+	MbSolid* pBlockPocket = NULL;
+	{
+	// Объект-именователь для операции построения отверстия/кармана
+	MbSNameMaker holeNames(ct_HoleSolid, MbSNameMaker::i_SideNone, 0); 
+
+
+	// Локальная СК, задающая положение вспомогательного тела - образа кармана.
+	const double DEG_TO_RAD = M_PI / 180.0;
+	MbPlacement3D plPocket(MbCartPoint3D(0, 0, 0));
+	plPocket.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0,0,0), MbCartPoint3D(1, 0, 0))),
+		-90 * DEG_TO_RAD);
+	plPocket.Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(100, 100, 100))); 
+
+	// Объект с параметрами операции построения кармана.
+	PocketValues params;
+	// Тип строящегося вспомогательного тела: карман
+	params.type = false; // Карман
+	// Длина, ширина и глубина кармана
+	params.length = 100;
+	params.width  = 50;
+	params.depth  = 20;
+	// Радиус скругления угловых ребер кармана
+	params.cornerRadius = 10;
+	// Радиус скругления ребер на дне кармана
+	params.floorRadius  = 5;
+	// Угол наклона стенок кармана
+	params.taperAngle = 20 * DEG_TO_RAD; 
+
+
+	// Вызов функции для построения кармана
+
+	::HoleSolid(pBlock, cm_Copy, plPocket, params, holeNames, pBlockPocket);
+	} 
+
+	// 3) Сечение тела с карманом плоскостью для последующего отображения
+	MbSolid* pBlockCut = NULL;
+	{
+	// Построение секущей плоскости
+
+	MbPlane* pPlane = new MbPlane(MbCartPoint3D(0, 0, 100), MbCartPoint3D(1, 0, 100),
+		MbCartPoint3D(0, 1, 100));
+	// Флаг сохранения части тела, расположенной снизу секущей плоскости
+
+	int partNum = -1;
+	// Объект-именователь для операции сечения поверхностью
+	MbSNameMaker cutNames(ct_CuttingSolid, MbSNameMaker::i_SideNone, 0);
+	// Тело при построении сечения считается замкнутым
+	bool closed = true;
+	// Флаги объединения общих граней и ребер
+	MbMergingFlags mergeFlags(true, true);
+	// Вызов функции построения сечения тела
+	::SolidCutting( *pBlockPocket, cm_Copy, *pPlane, partNum,
+		cutNames, closed, mergeFlags, pBlockCut );
+	//::DeleteItem(pPlane);
+	} 
+
+	// 4) Отображение части тела, полученной после сечения плоскостью
+	show(Style(1, LIGHTGRAY), pBlockCut); 
+
+	// 5) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pBlock);
+	::DeleteItem(pBlockPocket);
+	::DeleteItem(pBlockCut);
+	*/
+	return true;
+}
+[end]
+[id = "code_block_8"]
+[begin]
+#include "setup.h"
+#include <action_solid.h> 
+#include <surf_plane.h>
+using namespace c3d;
+ 
+bool run()
+{
+	// 1) Построение исходного тела - параллелепипеда
+	MbSolid* pBlock = NULL;
+	{
+	MbSNameMaker elNames(1, MbSNameMaker::i_SideNone, 0);
+	SArray<MbCartPoint3D> pnts(4);
+
+	pnts.Add(MbCartPoint3D(50, 50, 50));
+	pnts.Add(MbCartPoint3D(50, 50, 100));
+	pnts.Add(MbCartPoint3D(150, 50, 50));
+	pnts.Add(MbCartPoint3D(50, 100, 50));
+	::ElementarySolid(pnts, et_Block, elNames, pBlock);
+	} 
+
+	// 2) Построение паза в исходном теле
+	MbSolid* pBlockSlot = NULL;
+	{
+	// Объект-именователь для операции построения отверстия/кармана/паза
+	MbSNameMaker slotNames(ct_HoleSolid, MbSNameMaker::i_SideNone, 0); 
+
+	// Локальная СК, задающая положение вспомогательного тела - образа паза.
+	const double DEG_TO_RAD = M_PI / 180.0;
+	MbPlacement3D plSlot(MbCartPoint3D(0, 0, 0));
+	plSlot.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0))),
+		-90 * DEG_TO_RAD);
+	plSlot.Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(100, 100, 100))); 
+
+	// Объект с параметрами операции построения паза.
+	SlotValues params;
+	// Тип вспомогательного тела - паз, цилиндрический в донной части
+
+	params.type = SlotValues::st_BallEnd;
+	// Длина, ширина и глубина паза
+	params.length = 50;
+	params.width = 30;
+	params.depth = 10; 
+
+	// Вызов функции для построения паза
+	::HoleSolid(pBlock, cm_Copy, plSlot, params, slotNames, pBlockSlot);
+	} 
+
+	// 3) Сечение тела с пазом плоскостью для последующего отображения
+	MbSolid* pBlockCut = NULL;
+	{
+	// Построение секущей плоскости
+
+	MbPlane* pPlane = new MbPlane(MbCartPoint3D(0, 0, 100), MbCartPoint3D(1, 0, 100),
+		MbCartPoint3D(0, 1, 100));
+	// Флаг сохранения части тела, расположенной снизу секущей плоскости
+
+	int partNum = -1;
+	// Объект-именователь для операции сечения поверхностью
+	MbSNameMaker cutNames(ct_CuttingSolid, MbSNameMaker::i_SideNone, 0);
+	// Тело при построении сечения считается замкнутым
+	bool closed = true;
+	// Флаги объединения общих граней и ребер
+	MbMergingFlags mergeFlags(true, true);
+	// Вызов функции построения сечения тела
+	::SolidCutting(*pBlockSlot, cm_Copy, *pPlane, partNum,
+		cutNames, closed, mergeFlags, pBlockCut);
+	// ::DeleteItem(pPlane);
+	} 
+
+	// 4) Отображение части тела, полученной после сечения плоскостью
+	show(Style(1, LIGHTGRAY), pBlockSlot); 
+
+	// 5) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pBlock);
+	::DeleteItem(pBlockSlot);
+	::DeleteItem(pBlockCut);
+	*/
+	return true;
+}
+[end]
+[id = "code_block_9"]
+[begin]
+#include "setup.h"
+#include <action_solid.h> 
+
+using namespace c3d;
+
+// Построение исходного твердого тела в виде цилиндра, расположенного по центру
+// прямоугольного параллелепипеда (квадратной пластины)
+void CreateSourceSolid(MbSolid*& _pSolid)
+{
+	// Объект-именователь для построения элементарных тел
+	MbSNameMaker elNames(ct_ElementarySolid, MbSNameMaker::i_SideNone); 
+
+	// 1) Построение цилиндра
+	MbSolid* pCyl = NULL;
+	{
+	SArray<MbCartPoint3D> pntsCyl(3);
+	pntsCyl.Add(MbCartPoint3D(50, 0, 50));
+	pntsCyl.Add(MbCartPoint3D(50, 50, 50));
+	pntsCyl.Add(MbCartPoint3D(50, 0, 70));
+	::ElementarySolid(pntsCyl, et_Cylinder, elNames, pCyl);
+	} 
+
+	// 2) Построение квадратной пластины
+	MbSolid* pBlock = NULL;
+	{
+	SArray<MbCartPoint3D> pntsBlock(4);
+	pntsBlock.Add(MbCartPoint3D(0, 0, 0));
+	pntsBlock.Add(MbCartPoint3D(0, 0, 100));
+	pntsBlock.Add(MbCartPoint3D(100, 0, 0));
+	pntsBlock.Add(MbCartPoint3D(0, 10, 0));
+	::ElementarySolid(pntsBlock, et_Block, elNames, pBlock);
+	} 
+
+	// 3) Объединение двух тел
+	MbSNameMaker operBoolNames(ct_BooleanSolid, MbSNameMaker::i_SideNone, 0);
+	MbBooleanFlags flagsBool;
+	flagsBool.InitBoolean(true);
+	flagsBool.SetMergingFaces(true);
+	flagsBool.SetMergingEdges(true);
+	::BooleanResult(*pCyl, cm_Copy, *pBlock, cm_Copy, bo_Union,
+		flagsBool, operBoolNames, _pSolid); 
+
+	// 4) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pBlock);
+	::DeleteItem(pCyl);
+	*/
+} 
+
+bool run()
+{
+	// 1) Построение исходного тела с помощью вспомогательной функции
+	MbSolid* pSourceSolid = NULL;
+	CreateSourceSolid(pSourceSolid); 
+
+	// 2) Объект-именователь для операции построения ребра жесткости
+	MbSNameMaker ribNames(ct_RibSolid, MbSNameMaker::i_SideNone, 0); 
+
+	// 3) Указание значений параметров для построения ребра жесткости
+	// Локальная СК для размещения формобразующего контура (плоскость XY)
+	MbPlacement3D plRib;
+	plRib.Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 0, 50)));
+	// Формообразующий контур
+	MbLineSegment* pLineSeg = new MbLineSegment(MbCartPoint(5, 10), MbCartPoint(30, 45));
+	MbContour* pContour = new MbContour( *pLineSeg, true);
+	// Номер сегмента в контуре, который задает наклон ребра
+	size_t index = pContour->GetSegmentsCount()/2;
+	// Объект параметров для построения ребра жесткости
+	RibValues params;
+	// Толщина стенок ребра
+	params.thickness1 = 2;
+	params.thickness2 = 2;
+	// Задание углов уклона ребер жесткости (снять комментарий для получения рис.25б)
+	// const double DEG_TO_RAD = M_PI / 180.0;
+	// params.angle1 = 15 * DEG_TO_RAD;
+	// params.angle2 = 15 * DEG_TO_RAD; 
+
+	// 4) Вызов функции для добавления ребра жесткости к телу pSourceSolid.
+	MbSolid * pResult;
+	MbResultType res = ::RibSolid(*pSourceSolid, cm_Copy, plRib, *pContour, index,
+		params, ribNames, pResult); 
+
+	// 5) Отображение тела с ребром жесткости
+	if (res == rt_Success)
+	show(Style(1, LIGHTGRAY), pResult); 
+
+	// 6) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pLineSeg);
+	::DeleteItem(pContour);
+	::DeleteItem(pSourceSolid);
+	::DeleteItem(pResult);
+	*/
+	return true;
+}
+[end]

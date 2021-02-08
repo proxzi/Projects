@@ -1,0 +1,5 @@
+<?xml version = "1.0"?>
+<tutorial>
+  <preview>res/preview.png</preview>
+  <source category = "User's manual" displayName = "User's manual">source.md</source>
+</tutorial>

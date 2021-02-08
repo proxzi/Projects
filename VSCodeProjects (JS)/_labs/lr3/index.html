@@ -1,0 +1,46 @@
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>Document</title>
+</head>
+
+<body>
+	<script>
+		function Exercice5() {
+			let regAdrress = new RegExp("(https?):\/\/[a-z|.|/]+", "g");
+			let regMail = new RegExp("[a-z|.|/]+@[a-z|.|/]+", "g");
+
+			let text = `Текст: </br>RegExr v3 was created by gskinner.com, and is proudly hosted by Media Temple.
+			name@domain.zone
+				Edit the Expression & Text to see matches. Roll over matches or the expression for details. PCRE & Javascript flavors of regAdrressare supported.
+				https://regexr.com/
+				http://ya.ru
+				The side bar includes a Cheatsheet, full Reference, and Help. You can also Save & Share with the Community, and view patterns you create or favorite in My Patterns.
+				Explore results with the Tools below. Replace & List output custom results. Details lists capture groups. Explain describes your expression in plain English.
+				http://example.example/example/example.example
+				https://www.example.example
+				fsdf.dfdf@gmail.com`;
+
+			let text = prompt();
+			document.write(text);
+			let arrAdrress = text.match(regAdrress);
+			document.write('</br></br> Адреса:');
+			arrAdrress.forEach(mail => {
+				document.write(`</br> ${mail}`);
+			});
+
+			let arrMail = text.match(regMail);
+			document.write('</br></br> Почта:');
+			arrMail.forEach(mail => {
+				document.write(`</br> ${mail}`);
+			});
+		}
+
+		Exercice5();
+	</script>
+</body>
+
+</html>

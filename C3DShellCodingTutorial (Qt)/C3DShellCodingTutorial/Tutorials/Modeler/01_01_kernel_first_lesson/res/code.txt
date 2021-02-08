@@ -1,0 +1,623 @@
+[id = "code_block_1"]
+[begin]
+#include "setup.h"
+#include "mb_cart_point.h"
+
+using namespace c3d;
+
+bool run()
+{
+    // Создание двумерной точки в виде объекта MbCartPoint ядра C3D
+    MbCartPoint pnt( 1, 0 );
+    // Вызов метода отображения у объекта тестового приложения
+    show(pnt);
+    return true;
+}
+[end]
+[id = "code_block_2"]
+[begin]
+#include "setup.h"
+#include "mb_cart_point.h"
+#include "mb_placement3d.h"
+
+using namespace c3d;
+
+bool run()
+{
+    // Локальная система координат - по умолчанию совпадает с мировой СК
+    MbPlacement3D pl;
+    // Создание двумерной точки в виде объекта MbCartPoint ядра C3D
+    MbCartPoint pnt( 1, 0 );
+    // Добавление точки в геометрическую модель тестового приложения
+    show(pnt, &pl);
+    return true;
+} 
+[end]
+[id = "code_block_3"]
+[begin]
+#include "setup.h"
+#include "mb_cart_point.h"
+#include "mb_placement3d.h"
+
+using namespace c3d;
+
+bool run()
+{
+    // Система координат - по умолчанию совпадает с мировой СК
+    MbPlacement3D pl;
+    // Создание двух двумерных точек на осях X и Y
+    MbCartPoint pntX( 1, 0 ), pntY( 0, 1 );
+    // Добавление точек в модель c назначением им стилей отображения различными цветами
+    show(Style(5, RGB(255, 0, 0)), pntX, &pl);
+    show(Style(5, RGB(0, 255, 0)), pntY, &pl);
+    return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"
+
+#include "mb_cart_point.h"
+#include "mb_placement3d.h"
+#include "mb_axis3d.h"
+
+using namespace c3d;
+
+bool run()
+{
+    // Создание локальной СК, повернутой на 45 градусов относительно оси Z мировой СК
+    MbPlacement3D pl;
+    MbAxis3D axisZ( MbVector3D(0, 0, 1) );
+    pl.Rotate( axisZ, 45*M_PI/180 );
+    // Создание двух двумерных точек на осях X и Y
+    MbCartPoint pntX( 10, 0 ), pntY( 0, 10 );
+    // Добавление точек в модель c указанием локальной СК
+    show(Style(5, RGB(255, 0, 0)), pntX, &pl);
+    show(Style(5, RGB(0, 255, 0)), pntY, &pl);
+    return true;
+}
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"
+
+#include "mb_cart_point.h"
+#include "point_frame.h"
+
+using namespace c3d;
+
+bool run()
+{
+    // Создание трех трехмерных точек на осях X, Y и Z
+    MbCartPoint3D pntX( 1, 0, 0 ), pntY( 0, 1, 0 ), pntZ( 0, 0, 1 );
+    // Добавление точек в модель c назначением им стилей отображения различными цветами
+    // Каждая точка добавляется в виде "вырожденного" точечного каркаса, состоящего
+    // из единственной точки
+    show(Style(5, RGB(255,0,0)), new MbPointFrame(pntX));
+    show(Style(5, RGB(0,255,0)), new MbPointFrame(pntY));
+    show(Style(5, RGB(0,0,255)), new MbPointFrame(pntZ));
+    return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+
+#include "mb_cart_point3d.h"
+#include "point_frame.h"
+
+using namespace c3d;
+
+bool run()
+{
+    // Динамическое создание геометрического объекта "Точечный каркас"
+    MbPointFrame* pPnts = new MbPointFrame();
+    // Добавление точек в каркас pPnts - равномерная выборка одного периода синусоиды
+    const int STEP_COUNT = 10;
+    for (int i = 0; i <= STEP_COUNT; i++)
+    {
+        double x = 2*M_PI/STEP_COUNT * i;
+        MbCartPoint3D pnt( x, sin(x), 0 );
+        pPnts->AddVertex( pnt );
+    }
+    // Добавление точечного каркаса в геометрическую модель
+    show(Style(5, RGB(255,0,0)), pPnts);
+    return true;
+}
+[end]
+[id = "code_block_7"]
+[begin]
+#include "setup.h"
+
+#include "mb_cart_point.h"
+#include "mb_placement3d.h"
+#include "cur_line.h"
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // ПОСТРОЕНИЕ ДВУМЕРНОЙ ПРЯМОЙ – ПО ДВУМ ТОЧКАМ
+    MbCartPoint p1(0, 0), p2(1, 1); // Пара точек для построения прямой
+    // Динамическое создание объекта-прямой посредством вызова конструктора MbLine
+    MbLine* pLine1 = new MbLine( p1, p2 );
+    // В случае успешного создания объекта-прямой этот объект передается для сохранения
+    // в геометрической модели тестового приложения и для последующего отображения
+    // (будет отображаться красным цветом)
+    if ( pLine1 != nullptr )
+        show(Style( 1, RGB(255,0,0)), pLine1, &pl);
+    // ПРИМЕЧАНИЕ: удаление pLine1 не производится - за это отвечает
+    // объект - геометрическая модель внутри тестового приложения
+    // ПОСТРОЕНИЕ ДВУМЕРНОЙ ПРЯМОЙ – ПО ТОЧКЕ И УГЛУ
+    // Коэффициент для преобразования значений углов из градусов в радианы
+    const double DEG_TO_RAD = M_PI/180.0;
+    // Точка на оси Y
+    MbCartPoint pnt( 0, 5 );
+    // Направление (нормированный вектор) 15 градусов относительно оси X
+    MbDirection dir( 15*DEG_TO_RAD );
+    // Создание объекта-прямой с указанием точки и угла
+    MbLine* pLine2 = new MbLine( pnt, dir );
+    // Передача объекта-прямой тестовому приложению (будет отображаться синим цветом)
+    if ( pLine2 )
+        show( Style(1, RGB(0,0,255)), pLine2, &pl);
+    return true;
+}
+[end]
+[id = "code_block_8"]
+[begin]
+#include "setup.h"
+
+#include "mb_cart_point.h"
+#include "mb_placement3d.h"
+#include "cur_line_segment.h"
+
+using namespace c3d;
+
+bool run()
+{
+    // Локальная СК (расположена так, чтобы ее плоскость XY совпадала с
+    // плоскостью XZ мировой СК)
+    MbPlacement3D pl;
+    pl.SetAxisY( MbVector3D(0, 0, 1) );
+    // Вершины отрезка
+    MbCartPoint p1(5, 5), p2(15, 7);
+    // Динамическое создание объекта-отрезка
+    MbLineSegment* pSeg = new MbLineSegment( p1, p2 );
+    // Сохранение и отображение в тестовом приложении
+    if ( pSeg )
+        show( pSeg, &pl );
+    return true;
+}
+[end]
+[id = "code_block_9"]
+[begin]
+#include "setup.h"
+
+#include "cur_line3d.h" // Класс прямой MbLine3D
+#include "point_frame.h" // Класс MbPointFrame для отладочного отображения точек
+#include "action_point.h" // Описание алгоритмов трехмерной вычислительной геометрии
+
+using namespace c3d;
+
+bool run()
+{
+    // Построение трехмерной прямой по двум точкам
+    MbCartPoint3D p1(0, 5, 0), p2(3, 7, 5);
+    MbLine3D* pLine1 = new MbLine3D( p1, p2 );
+    // Прямая и точки, по которым она построена, отображаются синим цветом
+    if (pLine1)
+    {
+        show(Style( 2, BLUE ), pLine1);
+        show(Style( 1, BLUE ), new MbPointFrame(p1));
+        show(Style( 1, BLUE ), new MbPointFrame(p2));
+    }
+    // Построение второй прямой по двум точкам
+    MbCartPoint3D p3(0, 3, 0), p4(3, -7, 5);
+    MbLine3D* pLine2 = new MbLine3D( p3, p4 );
+    // Отображение второй прямой и пары ее точек пурпурным цветом
+    if ( pLine2 )
+    {
+        show( Style( 2, LIGHTMAGENTA ), pLine2              );
+        show( Style( 1, LIGHTMAGENTA ), new MbPointFrame(p3));
+        show( Style( 1, LIGHTMAGENTA ), new MbPointFrame(p4));
+    }
+    // Применение алгоритма для нахождения ближайших точек двух прямых и для
+    // вычисления расстояния между ними
+    MbCartPoint3D pntRes1, pntRes2;
+    double distMin = LineLineNearestPoints( *pLine1, *pLine2, pntRes1, pntRes2 );
+    // Поскольку точность компьютерных вычислений конечна, то для проверки
+    // пересечения прямых минимальное расстояние следует сравнивать не с
+    // точным нулевым значением 0.0, а с малой конечной величиной - допуском
+    if (distMin > 1e-10 )
+    {
+        // Отображение красным цветом ближайших точек пары прямых
+        show( Style( 1, LIGHTRED ), new MbPointFrame(pntRes1) );
+        show( Style( 1, LIGHTRED ), new MbPointFrame(pntRes2) );
+        message("Расстояние между прямыми: " + std::to_string(distMin));
+    }
+    else
+    {
+        // Отображение красным цветом точки пересечения прямых
+        show( Style( 1, LIGHTRED ), new MbPointFrame(pntRes1) );
+        message("Прямые пересекаются");
+    }
+    return true;
+}
+[end]
+[id = "code_block_10"]
+[begin]
+#include "setup.h"
+
+#include "cur_arc3d.h"
+#include "mb_axis3d.h"
+
+using namespace c3d;
+
+
+bool run()
+{
+    // Коэффициент для преобразования значений углов из градусов в радианы
+    const double DEG_TO_RAD = M_PI/180.0;
+    // Построение окружности в плоскости XY с центром в точке (5, 0) и радиусом 2
+    MbCartPoint3D pntCenter( 5, 0, 0 );
+    // Пара точек на окружности
+    MbCartPoint3D pntOnCircle1( 7, 0, 0 );
+    MbCartPoint3D pntOnCircle2( 5, 2, 0 );
+    // Вызываемый конструктор позволяет строить как окружности, так и дуги окружностей
+    // (в зависимости от передаваемых параметров)
+    // Четвертый параметр определяет смысл первого параметра – при n=0 его следует
+    // рассматривать в качестве центра окружности
+    // Пятый параметр при closed=true задает построение замкнутой окружности (а не дуги)
+    MbArc3D* pCircle = new MbArc3D(pntCenter, pntOnCircle1, pntOnCircle2,
+    0 /* n */, true /* closed */ );
+    if (pCircle)
+        show( Style( 1, LIGHTBLUE ), pCircle );
+    // Построение эллипса в плоскости XY с поворотом осей на 45 градусов
+    // pl - локальная система координат, в которой эллипс имеет каноническую форму
+    // (в ней оси эллипса параллельны осям координат)
+    MbPlacement3D pl;
+    pl.Rotate( MbAxis3D(pl.GetAxisZ()), 45*DEG_TO_RAD );
+    // Построение эллипса с указанием локальной СК и величин полуосей
+    // Последний параметр задает конец дуги в случае построения эллиптической дуги,
+    // для замкнутого эллипса должно быть angle=0
+    MbArc3D* pEllipse = new MbArc3D( pl, 10, 5, 0 /* angle */ );
+    if (pEllipse)
+        show( Style( 1, LIGHTRED ), pEllipse );
+    // Построение четверти эллиптической дуги для уже построенного эллипса.
+    // Начало и конец дуги расположены под углами 60 и 150 градусов относительно
+    // большой полуоси эллипса.
+    // Последний параметр initSense=1 задает направление движения против часовой стрелки
+    // от начальной до конечной точки дуги.
+    MbArc3D* pQuarterArc = new MbArc3D( *pEllipse, 60*DEG_TO_RAD,
+    150*DEG_TO_RAD, 1 /* initSense */ );
+    if (pQuarterArc)
+        show( Style( 2, LIGHTMAGENTA ), pQuarterArc );
+    return true;
+}
+[end]
+[id = "code_block_11"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h" // Система координат MbPlacement3D
+#include "cur_cone_spiral.h" // Коническая спираль MbConeSpiral
+#include "cur_polyline.h" // Ломаная двумерная линия MbPolyline
+#include "cur_polyline3d.h" // Ломаная линия MbPolyline3D
+#include "mb_axis3d.h" // Ось в пространстве MbAxis3D
+#include "surf_plane.h" // Плоскость MbPlane
+#include "point_frame.h" // Точечный каркас MbPointFrame
+#include "action_point.h" // Операции с точками
+
+using namespace c3d;
+
+bool run()
+{
+    // Построение конической спирали, ось которой направлена вдоль оси Y мировой СК.
+    // При построении ось конической спирали направлена вдоль оси Z локальной СК.
+    // Поэтому требуется локальная СК, у которой ось Z направлена вдоль оси Y мировой СК.
+    MbPlacement3D plSpiral( MbVector3D(1, 0, 0), /* Ось X локальной СК */
+    MbVector3D(0, 0, -1), /* Ось Y локальной СК */
+    MbCartPoint3D(0,0,0) /* Начало координат локальной СК */ );
+    // Создание конической спирали.
+    // Параметры конструктора:
+    // 1) Локальная СК, в направлении +Z которой будет ориентирована ось спирали
+    // 2) Радиус нижнего основания усеченного конуса, на боковой поверхности
+    // которого располагается спираль. Основание конуса располагается в
+    // плоскости XY локальной СК
+    // 3) Радиус верхнего основания усеченного конуса
+    // 4) Высота конуса
+    // 5) Шаг спирали
+    MbConeSpiral* pSpiral = new MbConeSpiral( plSpiral, 5, 3, 10, 1.5 );
+    // Добавление в модель и отображение спирали красным цветом
+    if (pSpiral)
+        show( Style( 1, LIGHTRED ), pSpiral );
+    // Создание плоскости - она совпадает с плоскостью XY локальной СК.
+    // Локальная СК для плоскости - мировая СК, повернутая на 45 градусов вокруг оси X
+    MbPlacement3D plPlane( MbVector3D(1,0,0), MbVector3D(0, 1, 1), MbCartPoint3D(0,0,0));
+    MbPlane* pPlane = new MbPlane( plPlane );
+    if (pPlane)
+    {
+        // Для отображения плоскости построим в виде ломаной линии прямоугольник
+        // со стороной 40
+        MbRect rRect(-20, -20, 20, 20); // Двумерные координаты вершин прямоугольника
+        // Прямоугольник на плоскости в виде двумерной ломаной линии.
+        // Это вспомогательный геометрический объект, который не добавляется в модель.
+        // Поэтому он создается в виде автоматической стековой переменной, а не в виде
+        // динамического объекта
+        MbPolyline rect2D ( rRect );
+        // Прямоугольник в трехмерном пространстве, лежащий в плоскости plPlane
+        MbPolyline3D* pRect3D = new MbPolyline3D( rect2D, plPlane );
+        // Добавление прямоугольника в модель и отображение синим цветом
+        if (pRect3D)
+            show(Style(1, LIGHTBLUE), pRect3D );
+    }
+    // Вычисление точек пересечения спирали и плоскости.
+    // Результат возвращается в виде значений параметров параметрических уравнений
+    // плоскости и спирали, которые соответствуют точкам пересечения.
+    SArray<MbCartPoint>
+    uvPlane;
+    SArray<double>
+    ttSpiral;
+    IntersectionPoints( *pPlane, true, *pSpiral, false, uvPlane, ttSpiral );
+    // Количество точек пересечения
+    int pntCnt = ttSpiral.Count();
+    // Отображение точек пересечения
+    for (int i = 0; i < pntCnt; i++)
+    {
+        // Вычисление декартовых координат i-й точки пересечения посредством
+        // подстановки параметра ttSpiral[i] в параметрическое уравнение спирали.
+        MbCartPoint3D pnt;
+        pSpiral->_PointOn(ttSpiral[i], pnt);
+        show( Style(2, LIGHTMAGENTA), new MbPointFrame(pnt) );
+    }
+    return true;
+}
+[end]
+[id = "code_block_12"]
+[begin]
+#include "setup.h"
+
+#include "mb_axis3d.h" // Ось в пространстве MbAxis3D
+#include "mb_placement3d.h" // Система координат MbPlacement3D
+#include "point_frame.h" // Точечный каркас MbPointFrame
+#include "cur_line_segment3d.h" // Отрезок MbLineSegment3D
+#include "surf_plane.h" // Плоскость MbPlane
+#include "surf_sphere_surface.h" // Сферическая поверхность MbSphereSurface
+#include "surf_cylinder_surface.h" // Цилиндрическая поверхность MbCylinderSurface
+#include "surf_cone_surface.h" // Коническая поверхность MbConeSurface
+#include "action_surface.h" // Функции построения поверхностей
+
+using namespace c3d;
+
+bool run()
+{
+    // Коэффициент для преобразования значений углов из градусов в радианы
+    const double DEG_TO_RAD = M_PI/180.0;
+    // Построение плоскости, совпадающей с координатной плоскостью XZ.
+    // Производится вызов конструктора плоскости по трем точкам.
+    // В данном случае могут быть переданы произвольные точки, лежащие в плоскости XZ.
+    // Значения координат влияют на размеры плоскости при отображении в
+    // тестовом приложении.
+    MbCartPoint3D planePnt1( 0, 0, 0 );
+    MbCartPoint3D planePnt2( 50, 0, 0 );
+    MbCartPoint3D planePnt3( 0, 0, 50 );
+    MbPlane* pPlane = new MbPlane( planePnt1, planePnt2, planePnt3 );
+    // Отображение плоскости синим цветом
+    if ( pPlane )
+        show( Style( 1, LIGHTBLUE ), pPlane );
+    // Далее производится построение элементарных поверхностей, касающихся плоскости XZ
+    // и лежащих в ее положительном полупространстве.
+    // Построение сферы посредством явного вызова конструктора с указанием центра и
+    // радиуса сферической поверхности
+    double radius_Sph1 = 10;
+    MbCartPoint3D centerPnt_Sph1( -radius_Sph1*3, radius_Sph1, -radius_Sph1*3 );
+    MbSphereSurface* pSphere1 = new MbSphereSurface( centerPnt_Sph1, radius_Sph1 );
+
+    if ( pSphere1 )
+        show( Style( 1, LIGHTRED ), pSphere1 );
+    // Построение сферы вызовом функции ядра для создания элементарной поверхности
+    // Назначение точек-параметров:
+    // 1) начало локальной СК поверхности;
+    // 2) точка, определяющая направление оси Х локальной СК и радиус поверхности;
+    // 3) точка, определяющая направление оси Y локальной СК.
+    // Параметры задаются так, чтобы центры двух сфер располагались по разные стороны и
+    // на равном расстоянии от оси OY мировой СК
+    MbSurface* pSphere2 = NULL;
+    double radius_Sph2 = 7;
+    MbCartPoint3D centerPnt_Sph2( -centerPnt_Sph1.x, radius_Sph2, -centerPnt_Sph1.z );
+    MbCartPoint3D pntOX_Sph2 = centerPnt_Sph2 + MbVector3D( radius_Sph2, 0, 0 );
+    MbCartPoint3D pntOY_Sph2 = centerPnt_Sph2 + MbVector3D( 0, radius_Sph2, 0 );
+    MbResultType resSph2 = ::ElementarySurface( centerPnt_Sph2, pntOX_Sph2,
+    pntOY_Sph2, st_SphereSurface, pSphere2 );
+    if ( resSph2 == rt_Success )
+        show( Style( 1, LIGHTGREEN ), pSphere2 );
+    // Построение первой цилиндрической поверхности
+    // Вызов конструктора с указанием центра локальной СК, радиуса основания и высоты.
+    // Ось цилиндра ориентируется вдоль оси Z локальной СК
+    double radius_Cyl1 = 4;
+    double height_Cyl1 = 15;
+    MbPlacement3D plCyl1;
+    // Локальная СК цилиндра: мировая СК смещается на заданный вектор и поворачивается
+    // так, чтобы ось Z локальной СК была параллельна оси OY мировой СК
+    plCyl1.Rotate(MbAxis3D(MbVector3D(1,0,0)), -90*DEG_TO_RAD );
+    plCyl1.Move( MbVector3D( radius_Cyl1*5, 0, -radius_Cyl1*5 ) );
+    MbCylinderSurface* pCyl1 = new MbCylinderSurface( plCyl1, radius_Cyl1, height_Cyl1 );
+    if ( pCyl1 )
+        show( Style( 1, LIGHTRED ), pCyl1 );
+    // Построение второй цилиндрической поверхности
+    // Вызов функции ядра для создания элементарной поверхности
+    MbSurface* pCyl2 = NULL;
+    double radius_Cyl2 = 2.5;
+    double height_Cyl2 = 10;
+    // Центр нижнего основания цилиндра (начало координат локальной СК) получаем
+    // отражением центра основания первого цилиндра относительно оси OY мировой СК
+    MbCartPoint3D centerPnt_Cyl2 = plCyl1.GetOrigin();
+    centerPnt_Cyl2.x = -centerPnt_Cyl2.x;
+    centerPnt_Cyl2.z = -centerPnt_Cyl2.z;
+    // Точка, задающая ось X локальной СК и определяющая высоту цилиндра
+    // В данном случае ось X локальной СК параллельна оси Y мировой СК
+    MbCartPoint3D pntOX_Cyl2 = centerPnt_Cyl2 + MbVector3D( 0, height_Cyl2, 0 );
+    // Точка, задающая ось Y локальной СК и определяющая радиус основания
+    // В данном случае ось Y локальной СК параллельна оси Z мировой СК
+    MbCartPoint3D pntOY_Cyl2 = centerPnt_Cyl2 + MbVector3D( 0, 0, radius_Cyl2 );
+    MbResultType resCyl2 = ::ElementarySurface( centerPnt_Cyl2, pntOX_Cyl2,
+    pntOY_Cyl2, st_CylinderSurface, pCyl2 );
+    if ( resCyl2 == rt_Success )
+        show( Style( 1, LIGHTGREEN ), pCyl2 );
+    // Построение первой конической поверхности
+    // Эта поверхность касается плоскости XZ мировой СК в одной точке
+    // Вызывается конструктор конической поверхности по трем точкам.
+    double height_Cone1 = 15;
+    double radius_Cone1 = 7.5;
+    // Вершина конической поверхности
+    MbCartPoint3D pntCone1_origin( 10, 0, 0 );
+    // Центр основания
+    MbCartPoint3D pntCone1_base = pntCone1_origin + MbVector3D(0, height_Cone1, 0 );
+    // Точка на боковой поверхности в плоскости основания
+    MbCartPoint3D pntCone1_surf = pntCone1_base + MbVector3D(radius_Cone1, 0, 0 );
+    MbConeSurface* pCone1 = new MbConeSurface( pntCone1_origin, pntCone1_base,
+    pntCone1_surf );
+    if (pCone1)
+        show( Style( 1, LIGHTRED ), pCone1 );
+    // Построение второй конической поверхности
+    // Основание этой поверхности лежит на плоскости XZ мировой СК
+    double height_Cone2 = 8;
+    double radius_Cone2 = 4;
+    // Вершина конической поверхности
+    MbCartPoint3D pntCone2_origin( -pntCone1_origin.x, height_Cone2, 0 );
+    // Центр основания
+    MbCartPoint3D pntCone2_base = pntCone2_origin + MbVector3D(0, -height_Cone2, 0 );
+    // Точка на боковой поверхности в плоскости основания
+    MbCartPoint3D pntCone2_surf = pntCone2_base + MbVector3D(radius_Cone2, 0, 0 );
+    MbSurface* pCone2 = NULL;
+    MbResultType resCone2 = ::ElementarySurface( pntCone2_origin, pntCone2_base,
+    pntCone2_surf, st_ConeSurface, pCone2 );
+    if ( resCone2 == rt_Success )
+        show( Style( 1, LIGHTGREEN ), pCone2 );
+    // Уменьшение счетчика ссылок на динамически созданные объекты.
+    // При достижении счетчиком 0 объект будет удален вызовом деструктора.
+    ::DeleteItem( pPlane );
+    ::DeleteItem( pSphere1 );
+    ::DeleteItem( pSphere2 );
+    ::DeleteItem( pCyl1 );
+    ::DeleteItem( pCyl2 );
+    ::DeleteItem( pCone1 );
+    ::DeleteItem( pCone2 );
+
+    return true;
+}
+[end]
+[id = "code_block_13"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h" // Система координат MbPlacement3D
+#include "curve3d.h" // Кривая в трехмерном пространстве MbCurve3D
+#include "surf_plane.h" // Плоскость MbPlane
+#include "surf_sphere_surface.h" // Сферическая поверхность MbSphereSurface
+#include "action_surface_curve.h" // Функции построения трехмерных кривых
+#include "wire_frame.h" // Проволочный каркас MbWireFrame
+
+using namespace c3d;
+
+bool run()
+{
+    // Сфера с центром в начале координат
+    double radius_Sphere = 15;
+    MbPlacement3D plSphere;
+    MbSphereSurface* pSphere = new MbSphereSurface( plSphere, radius_Sphere );
+    if ( pSphere )
+        show(Style(1, LIGHTRED), pSphere);
+    // Плоскость, пересекающая сферу
+    MbCartPoint3D planePnt1( 0, 5, 0 );
+    MbCartPoint3D planePnt2( 30, 15, 0 );
+    MbCartPoint3D planePnt3( 30, 15, 30 );
+    MbPlane* pPlane = new MbPlane( planePnt1, planePnt2, planePnt3 );
+    if ( pPlane )
+        show( Style( 1, LIGHTBLUE ), pPlane );
+    // Генератор имен для именования геометрических объектов
+    MbSNameMaker snMaker( -1, MbSNameMaker::i_SideNone, 0 );
+    // Проволочный каркас для приема результатов определения пересечений поверхностей
+    MbWireFrame* pTmpFrame = nullptr;
+    // Массив указателей на объекты класса MbCurve3D
+    RPArray<MbCurve3D>
+    arrCurves( 4 /* Начальная емкость массива */ );
+    // Вызов функции для вычисления кривых пересечения двух поверхностей
+    MbResultType res = ::IntersectionCurve( *pSphere, *pPlane, snMaker, pTmpFrame );
+    if (res == rt_Success)
+    {
+        // Извлечение результатов из проволочного каркаса в виде массива
+        // указателей на кривые. В случае сечения сферы плоскостью там
+        // должна оказаться одна кривая.
+        ::ExtractCurvesDeleteFrame( pTmpFrame, arrCurves );
+        for (int i=0; i < arrCurves.size(); i++)
+            show(Style(5, LIGHTMAGENTA), arrCurves[i] );
+    }
+
+    return true;
+}
+[end]
+[id = "code_block_14"]
+[begin]
+#include "setup.h"
+
+#include "surface.h" // Поверхность MbSurface
+#include "solid.h" // Твердое тело MbSolid
+#include "action_surface.h" // Функции построения поверхностей
+#include "action_solid.h" // Функции построения твердых тел
+#include "creator.h" // Построитель элементов твердотельных моделей
+
+using namespace c3d;
+
+bool run()
+{
+    // Построение цилиндрической поверхности
+    double height_Cyl = 10;
+    double radius_Cyl = 3;
+    MbCartPoint3D baseCenter1( 0, 0, 0 ); // Центр первого основания
+    MbCartPoint3D baseCenter2( 0, height_Cyl, 0 ); // Центр второго основания
+
+    // Точка на втором основании для указания радиуса цилиндра
+    MbCartPoint3D pntOnBase2( radius_Cyl, height_Cyl, 0 );
+    // Вызов функции ядра для создания элементарной поверхности
+    MbSurface* pCylSurf = NULL;
+    MbResultType resCylSurf = ::ElementarySurface( baseCenter1, baseCenter2, pntOnBase2,
+    st_CylinderSurface, pCylSurf );
+    // Построение цилиндрического тела
+    MbSolid* pCyl = nullptr;
+    if (resCylSurf == rt_Success)
+    {
+        // Вспомогательный объект для именования составных элементов твердого тела
+        MbSNameMaker namesCyl( ct_ElementarySolid, MbSNameMaker::i_SideNone, 0 );
+        // Вызов функции ядра для построения тела на основе элементарной поверхности
+        MbResultType resSolid = ::ElementarySolid( *pCylSurf, namesCyl, pCyl );
+        if ( resSolid == rt_Success )
+            show( Style( 1, LIGHTRED ), pCyl );
+    }
+    // Построение тела по характерным точкам (четырехгранная равносторонняя пирамида)
+    MbSolid* pPyr = nullptr;
+    // Массив характерных точек – 4 вершины основания + вершина пирамиды
+    SArray<MbCartPoint3D> arrPnts(5);
+    arrPnts.Add(MbCartPoint3D( -5, 0, -5 ));
+    arrPnts.Add(MbCartPoint3D( 5, 0, -5 ));
+    arrPnts.Add(MbCartPoint3D( 5, 0, 5 ));
+    arrPnts.Add(MbCartPoint3D( -5, 0, 5 ));
+    arrPnts.Add(MbCartPoint3D( 0, 15, 0 ));
+    MbSNameMaker namesPyr( ct_ElementarySolid, MbSNameMaker::i_SideNone, 0 );
+    // Вызов функции ядра для построения тела типа et_Pyramid по массиву точек
+    MbResultType resPyr = ::ElementarySolid( arrPnts, et_Pyramid, namesPyr, pPyr );
+    if (resPyr == rt_Success)
+    {
+        // Смещение твердого тела на заданный вектор
+        pPyr->Move( MbVector3D( 15, 0, 0 ) );
+        show( Style( 1, LIGHTBLUE ), pPyr );
+    }
+    // Уменьшение счетчиков ссылок на динамически созданные объекты
+    ::DeleteItem( pCylSurf );
+    ::DeleteItem( pCyl );
+    ::DeleteItem( pPyr );
+
+    return true;
+}
+[end]

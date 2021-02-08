@@ -1,0 +1,15 @@
+body { padding: 0; margin: 0; }
+canvas { display: block; margin: 0 auto; }
+#score{
+    position: absolute;
+    margin-top:15px;    
+    text-align: center;
+}
+#mouseY{
+    position: absolute;
+    margin-top:100px;  
+}
+#mouseX{
+    position: absolute;
+    
+}

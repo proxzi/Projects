@@ -1,0 +1,10 @@
+#basketTable {
+    margin: 15px;
+    padding: 10px;
+    border: 1px solid black;
+    width: 1000px;
+}
+
+.row, .btn {
+    margin: 5px;
+}

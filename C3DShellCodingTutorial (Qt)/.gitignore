@@ -1,0 +1,4 @@
+/build/
+.vs
+mocs*.cpp
+*.txt.user

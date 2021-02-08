@@ -1,0 +1,18 @@
+#spoiler {
+    width: 400px;
+}
+#header, #footer {
+    text-align: center;
+    border: 1px solid black;
+    min-height: 8px;
+    border-radius: 5px;
+    width: 400px;
+}
+#content {
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    display: none;
+    padding: 0 10px;
+    width: 370px;
+    margin-left: 6px;
+}

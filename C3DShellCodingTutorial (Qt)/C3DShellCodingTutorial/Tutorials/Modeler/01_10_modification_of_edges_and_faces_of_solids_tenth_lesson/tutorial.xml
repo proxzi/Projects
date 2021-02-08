@@ -1,0 +1,6 @@
+<?xml version = "1.0"?>
+<tutorial>
+  <code>res/code.txt</code>
+  <preview>res/preview.png</preview>
+  <source category = "Modeler" displayName = "Модификация ребер и граней твердых тел">source.md</source>
+</tutorial>

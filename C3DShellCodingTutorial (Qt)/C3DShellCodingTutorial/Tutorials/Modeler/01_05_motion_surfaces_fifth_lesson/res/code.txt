@@ -1,0 +1,851 @@
+[id = "code_block_1"]
+[begin] 
+#include "setup.h"
+
+#include "surf_extrusion_surface.h"
+#include "cur_line_segment3d.h"
+#include "cur_polyline3d.h"
+#include "action_surface.h"
+
+using namespace c3d;
+
+bool run()
+{
+    // Параметры модели коробки
+    // Ширина, высота и глубина - размеры вдоль осей X, Y и Z
+    const double BOX_WIDTH = 10, BOX_HEIGHT = 2.5, BOX_DEPTH = 15;
+    // Ширина поперечины - 20% от глубины коробки
+    const double BAR_SIZE = BOX_DEPTH/5;
+
+    // 1) Построение боковой поверхности
+    MbSurface* pSurfBox = nullptr;
+    // Вершины прямоугольника ABCD (дно коробки)
+    std::vector<MbCartPoint3D> arrPolyPntsBox = {{0, 0, 0}, {BOX_WIDTH, 0, 0},
+                                {BOX_WIDTH, 0, BOX_DEPTH}, {0, 0, BOX_DEPTH}};
+    // Образующая для построения боковой поверхности - контур дна коробки
+    // в виде ломаной линии
+    MbPolyline3D* pGenCurveBox = new MbPolyline3D(arrPolyPntsBox, true);
+    // Направляющий вектор - параллелен оси Y, длина равна высоте коробки CC1
+    MbVector3D vecDirBox(0, BOX_HEIGHT, 0);
+    // Вызов функции-утилиты для построения поверхности выдавливания
+    MbResultType resBox = ::ExtrusionSurface(*pGenCurveBox, vecDirBox, true, pSurfBox);
+
+    // 2) Построение дна коробки - прямоугольника ABCD
+    MbSurface* pSurfBottom = nullptr;
+    // Образующая - отрезок AB
+    MbLineSegment3D* pGenCurveBottom =
+    new MbLineSegment3D(arrPolyPntsBox[0], arrPolyPntsBox[1]);
+    // Направляющий вектор - параллелен оси Z, длина равна глубине коробки BC
+    MbVector3D vecDirBottom(0, 0, BOX_DEPTH);
+    MbResultType resBottom = ::ExtrusionSurface(*pGenCurveBottom, vecDirBottom, 
+                                                 true, pSurfBottom);
+
+    // 3) Построение поперечного элемента
+    MbSurface* pSurfBar = nullptr;
+    // Образующая - отрезок EF - строится посредством параллельного переноса
+    // отрезка AB на вектор AE
+    MbLineSegment3D* pGenCurveBar =
+    new MbLineSegment3D(arrPolyPntsBox[0], arrPolyPntsBox[1]);
+    pGenCurveBar->Move(MbVector3D(0, BOX_HEIGHT, (BOX_DEPTH - BAR_SIZE)/2));
+    // Направляющий вектор - параллелен оси Z, длина равна ширине поперечины
+    MbVector3D vecDirBar(0, 0, BAR_SIZE);
+    MbResultType resBar = ::ExtrusionSurface(*pGenCurveBar, vecDirBar, true, pSurfBar);
+
+    // Отображение поверхностей
+    show(Style(1, LIGHTGRAY), pSurfBox);
+    show(Style(1, GREEN), pSurfBottom);
+    show(Style(1, BLUE), pSurfBar);
+
+    // Уменьшение счетчика ссылок динамически созданных объектов ядра
+    ::DeleteItem(pGenCurveBox);
+    ::DeleteItem(pSurfBox);
+    ::DeleteItem(pGenCurveBottom);
+    ::DeleteItem(pSurfBottom);
+    ::DeleteItem(pGenCurveBar);
+    ::DeleteItem(pSurfBar);
+
+    return true;
+}
+[end]
+[id = "code_block_2"]
+[begin]
+#include "setup.h"
+
+#include "surf_extrusion_surface.h"
+#include "cur_line_segment3d.h"
+#include "cur_contour.h"
+#include "cur_arc3d.h"
+#include "action_surface.h"
+#include "action_curve.h"
+
+using namespace c3d;
+
+bool run()
+{
+    // Размер стороны поверхностного фрагмента в виде квадрата
+    const double SIZE_SQUARE = 5;
+    // Радиус внутреннего центрального отверстия
+    const double HOLE_RADIUS = SIZE_SQUARE/3;
+
+    // 1) ПОСТРОЕНИЕ БАЗОВОЙ ПОВЕРХНОСТИ ВЫДАВЛИВАНИЯ
+    MbSurface* pSurfBase = 0;
+    {
+        // Образующая: отрезок на оси X длиной SIZE_SQUARE
+        MbLineSegment3D* pGenCurve =
+        new MbLineSegment3D(MbCartPoint3D(0, 0, 0), 
+                            MbCartPoint3D(SIZE_SQUARE,0,0));
+        // Направляющий вектор - направлен в сторону +Z
+        MbVector3D vecDir(0, 0, SIZE_SQUARE);
+        // Вызов функции-утилиты для построения поверхности выдавливания
+        ::ExtrusionSurface(*pGenCurve, vecDir, true, pSurfBase);
+   }
+
+    // 2) ПОСТРОЕНИЕ КРУГОВОГО КОНТУРА НА ПОВЕРХНОСТИ
+    MbContour* pArcContour = 0;
+    {
+        // Центр отверстия и пара точек на окружности в глобальной СК
+        MbCartPoint3D pc(SIZE_SQUARE/2, 0, SIZE_SQUARE/2);
+        MbCartPoint3D p1 = pc, p2 = pc;
+        p1.x += HOLE_RADIUS;
+        p2.z += HOLE_RADIUS;
+        // Вспомогательная пространственная кривая - контур отверстия
+        MbArc3D* pArcCurve = new MbArc3D(pc, p1, p2, 0, true);
+        // Проецирование пространственной кривой на поверхность для получения
+        // контура на поверхности
+        ::SurfaceBoundContour(*pSurfBase, *pArcCurve, Math::DefaultMathVersion(),
+                                pArcContour);
+        ::DeleteItem(pArcCurve);
+   }
+
+    // 3) ПОЛУЧЕНИЕ КОНТУРА - ВНЕШНЕЙ ГРАНИЦЫ БАЗОВОЙ ПОВЕРХНОСТИ
+    MbContour* pExtContour = &pSurfBase->MakeContour(true);
+
+    // 4) ПОСТРОЕНИЕ ПОВЕРХНОСТИ, ОГРАНИЧЕННОЙ ПАРОЙ КОНТУРОВ
+    MbSurface* pSurf = 0;
+    {
+        RPArray<MbCurve> arrBounds;
+        arrBounds.Add(pExtContour);
+        arrBounds.Add(pArcContour);
+        // Построение поверхности pSurf на базе поверхности выдавливания pSurfBase
+        ::BoundedSurface(*pSurfBase, arrBounds, pSurf);
+   }
+
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf);
+
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem(pSurfBase);
+    ::DeleteItem(pSurf);
+    ::DeleteItem(pArcContour);
+    ::DeleteItem(pExtContour);
+
+    return true;
+}
+[end]
+[id = "code_block_3"]
+[begin]
+#include "setup.h"  
+
+#include "cur_line_segment3d.h"
+#include "cur_arc3d.h"
+#include "cur_contour3d.h"
+#include "action_surface.h"
+#include "surf_revolution_surface.h"
+
+using namespace c3d;
+
+// Построение поверхности вращения в виде комбинации цилиндра и сферы с
+// совпадающими центрами тяжести.
+MbSurface* CreateCylSphereSurface()
+{
+    // Параметры цилиндра и сферы
+    const double CYL_RAD = 2.0;
+    const double CYL_HEIGHT = 20.0;
+    const double SPHERE_RAD = 5.0;
+
+    // Образующая кривая: контур, состоящий из двух отрезков и дуги окружности между ними
+    // Точки - вершины сегментов образующей (рис. 4)
+    MbCartPoint3D p1(CYL_RAD, CYL_HEIGHT/2, 0);
+    MbCartPoint3D p2(CYL_RAD, sqrt(SPHERE_RAD*SPHERE_RAD - CYL_RAD*CYL_RAD), 0);
+    MbCartPoint3D p3(SPHERE_RAD, 0, 0);
+    MbCartPoint3D p4(p2.x, -p2.y, p2.z);
+    MbCartPoint3D p5(p1.x, -p1.y, p1.z);
+    // Сегменты образующей кривой
+    MbLineSegment3D* pSeg1 = new MbLineSegment3D(p1, p2);
+    MbArc3D* pArc = new MbArc3D(p2, p3, p4, 1, false);
+    MbLineSegment3D* pSeg2 = new MbLineSegment3D(p4, p5);
+    // Построение образующей кривой в виде контура из трех сегментов
+    RPArray<MbCurve3D> arrCurves;
+    arrCurves.Add(pSeg1);
+    arrCurves.Add(pArc);
+    arrCurves.Add(pSeg2);
+    MbContour3D* pGenContour = new MbContour3D(arrCurves, true);
+
+    // Параметры оси вращения - она совпадает с осью цилиндра и осью Y локальной СК,
+    // в которой задавались вершины сегментов образующей кривой p1-p5.
+    MbCartPoint3D axOrg(0, 0, 0);
+    MbVector3D axDir(0, 1, 0);
+
+    // Построение поверхности вращения
+    MbSurface* pSurf = nullptr;
+    MbResultType res = ::RevolutionSurface(*pGenContour, axOrg, axDir,
+                                             2*M_PI, true, pSurf);
+    if (res != rt_Success)
+    {
+        // Возврат в случае ошибки при построении поверхности
+        ::DeleteItem(pGenContour);
+        ::DeleteItem(pSurf);
+        return nullptr;
+   }
+
+    ::DeleteItem(pGenContour);
+    return pSurf;
+}
+
+bool run()
+{
+    // Построение поверхности реализовано в отдельной функции
+    MbSurface* pSurf = CreateCylSphereSurface();
+
+    // Отображение поверхности
+    show(Style(1, LIGHTGRAY), pSurf);
+
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem(pSurf);
+
+    return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"
+
+#include "cur_line_segment3d.h"
+#include "cur_polyline3d.h"
+#include "cur_contour3d.h"
+#include "cur_arc3d.h"
+#include "cur_contour.h"
+#include "action_surface.h"
+#include "surf_revolution_surface.h"
+#include "action_surface_curve.h"
+#include "action_curve.h"
+
+#include "mb_axis3d.h"
+
+using namespace c3d;
+
+// Функция из примера 4.1
+MbSurface* CreateCylSphereSurface()
+{
+    // Параметры цилиндра и сферы
+    const double CYL_RAD = 2.0;
+    const double CYL_HEIGHT = 20.0;
+    const double SPHERE_RAD = 5.0;
+
+    // Образующая кривая: контур, состоящий из двух отрезков и дуги окружности между ними
+    // Точки - вершины сегментов образующей (рис. 4)
+    MbCartPoint3D p1(CYL_RAD, CYL_HEIGHT/2, 0);
+    MbCartPoint3D p2(CYL_RAD, sqrt(SPHERE_RAD*SPHERE_RAD - CYL_RAD*CYL_RAD), 0);
+    MbCartPoint3D p3(SPHERE_RAD, 0, 0);
+    MbCartPoint3D p4(p2.x, -p2.y, p2.z);
+    MbCartPoint3D p5(p1.x, -p1.y, p1.z);
+    // Сегменты образующей кривой
+    MbLineSegment3D* pSeg1 = new MbLineSegment3D(p1, p2);
+    MbArc3D* pArc = new MbArc3D(p2, p3, p4, 1, false);
+    MbLineSegment3D* pSeg2 = new MbLineSegment3D(p4, p5);
+    // Построение образующей кривой в виде контура из трех сегментов
+    RPArray<MbCurve3D> arrCurves;
+    arrCurves.Add(pSeg1);
+    arrCurves.Add(pArc);
+    arrCurves.Add(pSeg2);
+    MbContour3D* pGenContour = new MbContour3D(arrCurves, true);
+
+    // Параметры оси вращения - она совпадает с осью цилиндра и осью Y локальной СК,
+    // в которой задавались вершины сегментов образующей кривой p1-p5.
+    MbCartPoint3D axOrg(0, 0, 0);
+    MbVector3D axDir(0, 1, 0);
+
+    // Построение поверхности вращения
+    MbSurface* pSurf = nullptr;
+    MbResultType res = ::RevolutionSurface(*pGenContour, axOrg, axDir,
+                                            2*M_PI, true, pSurf);
+    if (res != rt_Success)
+    {
+        // Возврат в случае ошибки при построении поверхности
+        ::DeleteItem(pGenContour);
+        ::DeleteItem(pSurf);
+        return nullptr;
+   }
+
+    ::DeleteItem(pGenContour);
+    return pSurf;
+}
+
+bool run()
+{
+    // Параметры прямоугольной призмы, которая будет дополнять поверхность pCylSphere
+    const double PRISM_SIDE = 5;    // Сторона квадратного основания призмы
+    const double PRISM_HEIGHT = 20; // Высота призмы
+
+    // 1) ПОСТРОЕНИЕ ЧАСТИ МОДЕЛИ В ВИДЕ КОМБИНАЦИИ СФЕРИЧЕСКОЙ И ЦИЛИНДРИЧЕСКОЙ
+    // ПОВЕРХНОСТЕЙ (вызывается функция, реализованная в примере 4.1)
+    MbSurface* pCylSphere = CreateCylSphereSurface();
+    MbAxis3D axVert(MbVector3D(0, 1, 0));
+    pCylSphere->Rotate(axVert, M_PI/2);
+
+    // 2) ПОСТРОЕНИЕ ПАРЫ КОНТУРОВ, ОГРАНИЧИВАЮЩИХ ОДНУ ИЗ ЧАСТЕЙ ПРИЗМЫ СНАРУЖИ СФЕРЫ
+    // Координаты вершин основания призмы (в плоскости, параллельной ZY, и
+    // смещенной на половину высоты в сторону -X)
+    std::vector<MbCartPoint3D> arrPnts_Base1 = 
+    {
+        {-PRISM_HEIGHT/2, PRISM_SIDE/2, -PRISM_SIDE/2},
+        {-PRISM_HEIGHT/2, PRISM_SIDE/2, PRISM_SIDE/2},
+        {-PRISM_HEIGHT/2, -PRISM_SIDE/2, PRISM_SIDE/2}, 
+        {-PRISM_HEIGHT/2, -PRISM_SIDE/2, -PRISM_SIDE/2}
+   };
+
+    // Контур - замкнутая ломаная для представления основания призмы
+    MbPolyline3D* pContour_Base1 = new MbPolyline3D(arrPnts_Base1, true);
+
+    // Проецирование пространственного контура pContour_Base1 на поверхность pCylSphere
+    RPArray< MbCurve3D > arrProjCurves_Base1;
+    MbVector3D dirProj1(+1, 0, 0);
+    ::CurveProjection(*pCylSphere, *pContour_Base1, &dirProj1, false, false,
+                       arrProjCurves_Base1);
+
+    // 3) ПОСТРОЕНИЕ ПЕРВОГО ФРАГМЕНТА ПОВЕРХНОСТИ ПРИЗМЫ
+    // Поверхность pSurfPrism1 строится как линейчатая поверхность, заданная парой кривых
+    MbSurface* pSurfPrism1 = 0;
+    ::RuledSurface(*pContour_Base1, *arrProjCurves_Base1[0], true, pSurfPrism1);
+
+    // 4) ПОСТРОЕНИЕ ВТОРОГО ФРАГМЕНТА ПОВЕРХНОСТИ ПРИЗМЫ
+    // Второе основание призмы смещено относительно первого основания на высоту призмы
+    MbPolyline3D* pContour_Base2 = new MbPolyline3D(arrPnts_Base1, true);
+    pContour_Base2->Move(MbVector3D(PRISM_HEIGHT, 0, 0));
+
+    // Проецирование пространственного контура pContour_Base2 на поверхность pCylSphere
+    RPArray< MbCurve3D > arrProjCurves_Base2;
+    MbVector3D dirProj2(-1, 0, 0);
+    ::CurveProjection(*pCylSphere, *pContour_Base2, &dirProj2, false, false,
+                       arrProjCurves_Base2);
+
+    // Построение второго фрагмента поверхности призмы как линейчатой поверхности,
+    // заданной парой кривых
+    MbSurface* pSurfPrism2 = 0;
+    ::RuledSurface(*pContour_Base2, *arrProjCurves_Base1[0], true, pSurfPrism2);
+
+    // 5) ПОСТРОЕНИЕ ОТВЕРСТИЙ НА БАЗОВОЙ ПОВЕРХНОСТИ pCylSphere, СООТВЕТСТВУЮЩИХ
+    // ЛИНИЯМ ПЕРЕСЕЧЕНИЯ ПРИЗМЫ СО СФЕРОЙ
+    // Построение поверхности, ограниченной тремя контурами
+    MbSurface* pSurfWithHoles = 0;
+    RPArray<MbCurve> arrBounds;
+    {
+        // Проецирование пространственных кривых - линий пересечения призмы со
+        // сферой - на базовую поверхность для получения двумерных контуров на
+        // базовой поверхности
+        MbContour* pProjContour1 = nullptr;
+        ::SurfaceBoundContour(*pCylSphere, *arrProjCurves_Base1[0],
+                               Math::DefaultMathVersion(), pProjContour1);
+
+        MbContour* pProjContour2 = nullptr;
+        ::SurfaceBoundContour(*pCylSphere, *arrProjCurves_Base2[0],
+                               Math::DefaultMathVersion(), pProjContour2);
+
+        // Получение контура - внешней границы базовой поверхности
+        MbContour* pExtContour = &pCylSphere->MakeContour(true);
+
+        // Построение поверхности с отверстиями pSurfWithHoles на базе pCylSphere
+        arrBounds.Add(pExtContour);
+        arrBounds.Add(pProjContour1);
+        arrBounds.Add(pProjContour2);
+        ::BoundedSurface(*pCylSphere, arrBounds, pSurfWithHoles);
+   }
+
+    // 6) ОТОБРАЖЕНИЕ ГЕОМЕТРИЧЕСКИХ ОБЪЕКТОВ
+    show(Style(1, LIGHTGRAY), pSurfWithHoles); 
+    show(Style(3, LIGHTRED), pContour_Base1);
+    show(Style(3, LIGHTRED), arrProjCurves_Base1[0]);
+    show(Style(3, LIGHTRED), pContour_Base2);
+    show(Style(3, LIGHTRED), arrProjCurves_Base2[0]);
+    show(Style(3, LIGHTGRAY), pSurfPrism1);
+    show(Style(3, LIGHTGRAY), pSurfPrism2);
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem(pCylSphere);
+    ::DeleteItem(pContour_Base1);
+    for (int i=0; i<arrProjCurves_Base1.size(); i++)
+        ::DeleteItem(arrProjCurves_Base1[i]);
+    ::DeleteItem(pSurfPrism1);
+    ::DeleteItem(pContour_Base2);
+    for (int i=0; i<arrProjCurves_Base2.size(); i++)
+       ::DeleteItem(arrProjCurves_Base2[i]);
+    ::DeleteItem(pSurfPrism2);
+    for (int i=0; i<arrBounds.size(); i++)
+        ::DeleteItem(arrBounds[i]);
+    ::DeleteItem(pSurfWithHoles);
+
+    return true;
+}
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"
+ 
+#include "cur_polyline3d.h"
+#include "cur_arc3d.h"
+#include "action_solid.h"  
+
+using namespace c3d;
+
+
+// Вспомогательная функция.
+// Построение тонкостенного твердого тела вращения в виде комбинации
+// цилиндра и сферы с центрами тяжести в начале координат.
+MbSolid* CreateCylSphereSolid(double sphereRad, double cylRad, double cylHeight,
+                               double thwall /* толщина стенки */)
+{
+    // Образующая кривая: контур, состоящий из двух отрезков и дуги окружности между ними
+    // Точки - вершины сегментов образующей
+    MbCartPoint3D p1(cylRad, cylHeight/2, 0);
+    MbCartPoint3D p2(cylRad, sqrt(sphereRad*sphereRad - cylRad*cylRad), 0);
+    MbCartPoint3D p3(sphereRad, 0, 0);
+    MbCartPoint3D p4(p2.x, -p2.y, p2.z);
+    MbCartPoint3D p5(p1.x, -p1.y, p1.z);
+    // Сегменты образующей кривой
+    MbLineSegment3D* pSeg1 = new MbLineSegment3D(p1, p2);
+    MbArc3D* pArc = new MbArc3D(p2, p3, p4, 1, false);
+    MbLineSegment3D* pSeg2 = new MbLineSegment3D(p4, p5);
+    // Построение образующей кривой в виде контура из трех сегментов
+    RPArray<MbCurve3D> arrCurves;
+    arrCurves.Add(pSeg1);
+    arrCurves.Add(pArc);
+    arrCurves.Add(pSeg2);
+    MbContour3D* pGenContour = new MbContour3D(arrCurves, true);
+
+    // Формирование объекта-образующей sweptData
+    RPArray< MbContour3D > arrContours;
+    arrContours.Add(pGenContour);
+    MbSweptData sweptData(arrContours);
+
+    // Параметры оси вращения - ось направлена вдоль оси Y
+    MbCartPoint3D axOrg(0, 0, 0);
+    MbVector3D axDir(0, 1, 0);
+    MbAxis3D axRot(axOrg, axDir);
+
+    // Именователь граней твердого тела вращения
+    MbSNameMaker operNames(ct_CurveRevolutionSolid, MbSNameMaker::i_SideNone, 0);
+    operNames.SetVersion(MbNameVersion());
+    PArray<MbSNameMaker> cNames(0, 1, false);
+
+    // Параметры операции вращения для построения тонкостенного тела
+    RevolutionValues params;
+    params.shape = 0;                        // Построение тела типа "сфера"
+    params.side1.scalarValue = 360*M_PI/180; // Угол поворота образующей
+    params.thickness1 = thwall;              // Толщина стенки
+
+    // Вызов операции построения тела вращения pSolid
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::RevolutionSolid(sweptData, axRot, params,
+                                          operNames, cNames, pSolid);
+    if (res != rt_Success)
+    {
+        // Возврат в случае ошибки при построении твердого тела
+        ::DeleteItem(pGenContour);
+        ::DeleteItem(pSolid);
+        return nullptr;
+   }
+
+    // Возврат построенного твердого тела
+    return pSolid;
+} 
+
+// Вспомогательная функция.
+// Построение тонкостенного твердого тела выдавливания, представляющего боковую
+// поверхность призмы с квадратным основанием
+MbSolid* CreatePrismSolid(double prismSide, double prismHeight, double thwall)
+{
+    // Координаты вершин основания призмы (в плоскости ZY - в среднем сечении призмы)
+    std::vector<MbCartPoint3D> arrPnts_Base1 = 
+    {
+        {0, prismSide/2, -prismSide/2},
+        {0, prismSide/2, prismSide/2},
+        {0, -prismSide/2, prismSide/2},
+        {0, -prismSide/2, -prismSide/2}
+    };
+
+    // Контур - замкнутая ломаная для представления основания призмы
+    MbPolyline3D* pContour_Base1 = new MbPolyline3D(arrPnts_Base1, true);
+
+    // Построение образующей кривой
+    RPArray<MbCurve3D> arrCurves;
+    arrCurves.Add(pContour_Base1);
+    MbContour3D* pGenContour = new MbContour3D(arrCurves, true);
+
+    // Формирование объекта-образующей sweptData
+    RPArray< MbContour3D > arrContours;
+    arrContours.Add(pGenContour);
+    MbSweptData sweptData(arrContours);
+
+    // Направление выдавливания
+    MbVector3D vecDir(1, 0, 0);
+
+    // Именователь граней твердого тела
+    MbSNameMaker operNames(ct_CurveExtrusionSolid, MbSNameMaker::i_SideNone, 0);
+    operNames.SetVersion(MbNameVersion());
+    PArray<MbSNameMaker> cNames(0, 1, false);
+
+    // Параметры операции выдавливания.
+    // Выдавливание производится симметрично в обе стороны от образующей.
+    ExtrusionValues params(prismHeight/2, prismHeight/2);
+    params.thickness1 = thwall; // Толщина стенки
+
+    // Вызов операции выдавливания для построения твердого тела pSolid
+    MbSolid* pSolid = nullptr;
+    MbResultType res = ::ExtrusionSolid(sweptData, vecDir, nullptr, nullptr, false,
+                                         params, operNames, cNames, pSolid);
+    if (res != rt_Success)
+    {
+        // Возврат в случае ошибки при построении твердого тела
+        ::DeleteItem(pGenContour);
+        ::DeleteItem(pSolid);
+        return nullptr;
+   }
+
+    // Возврат построенного твердого тела
+    return pSolid;
+}
+
+// Основная функция.
+// Построение твердотельной тонкостенной модели в виде комбинации
+// тел вращения и выдавливания
+bool run()
+{
+    // 1) ПОСТРОЕНИЕ ПЕРВОГО ВСПОМОГАТЕЛЬНОГО ТОНКОСТЕННОГО ТВЕРДОГО ТЕЛА
+    //    ВРАЩЕНИЯ – КОМБИНАЦИЯ ЦИЛИНДРА И СФЕРЫ
+    const double CYL_RAD = 2.0;     // Радиус цилиндрической части
+    const double CYL_HEIGHT = 20.0; // Высота цилиндрической части
+    const double SPHERE_RAD = 5.0;  // Радиус сферической части
+    const double THICKNESS = 0.1;   // Толщина тонкой стенки
+    MbSolid* pCylSphereSolid = CreateCylSphereSolid(SPHERE_RAD, CYL_RAD,
+                                                     CYL_HEIGHT, THICKNESS);
+    // Возможный отладочный вызов для проверки выполнения шага 1)
+    // if (pCylSphereSolid)
+    // show(pCylSphereSolid);
+
+    // 2) ПОСТРОЕНИЕ ВТОРОГО ВСПОМОГАТЕЛЬНОГО ТОНКОСТЕННОГО ТВЕРДОГО ТЕЛА ВЫДАВЛИВАНИЯ –
+    // БОКОВАЯ ПОВЕРХНОСТЬ ПРИЗМЫ С КВАДРАТНЫМ ОСНОВАНИЕМ
+    const double PRISM_SIDE = 5;    // Сторона квадратного основания призмы
+    const double PRISM_HEIGHT = 20; // Высота призмы
+    MbSolid* pPrismSolid = CreatePrismSolid(PRISM_SIDE, PRISM_HEIGHT, THICKNESS);
+    // Возможный отладочный вызов для проверки выполнения шага 2)
+    // if (pPrismSolid)
+    // show(pPrismSolid);
+
+    // 3) РАЗБИЕНИЕ ПРИЗМАТИЧЕСКОГО ТЕЛА pPrismSolid НА ТРИ ЧАСТИ: ДВЕ ЧАСТИ СНАРУЖИ
+    // И ОДНА ВНУТРИ pCylSphereSolid.
+    // ВНЕШНИЕ ЧАСТИ ОТБИРАЮТСЯ ДЛЯ ИСПОЛЬЗОВАНИЯ ПРИ ПОСТРОЕНИИ РЕЗУЛЬТИРУЮШЕГО ТЕЛА
+    MbSolid* pPrismPart1 = nullptr;
+    MbSolid* pPrismPart2 = nullptr;
+
+    // Именователь граней для построения тела с помощью булевой операции
+    MbSNameMaker operBoolNames(ct_BooleanSolid, MbSNameMaker::i_SideNone, 0);
+    // Флаги операции: построение замкнутого тела с объединением подобных граней и ребер
+    MbBooleanFlags flagsBool;
+    flagsBool.InitBoolean(true);
+    flagsBool.SetMergingFaces(true);
+    flagsBool.SetMergingEdges(true);
+
+    {
+        // Булева операция - разность тел: pSolidDiff = pPrismSolid - pCylSphereSolid
+        // Для выполнения разности генерируется вспомогательное тело pCylSphereSolidSmall,
+        // у которого радиус сферической части меньше, чем у pCylSphereSolid, на
+        // толщину стенки.
+        // Это сделано для гарантированного последующего объединения частей тел в
+        // дальнейшем, на шаге 5).
+        MbSolid* pCylSphereSolidSmall = CreateCylSphereSolid(SPHERE_RAD - THICKNESS,
+                                                    CYL_RAD, CYL_HEIGHT, THICKNESS);
+        MbSolid* pSolidDiff = nullptr;
+        MbResultType res = ::BooleanResult(*pPrismSolid, cm_Copy, *pCylSphereSolidSmall,
+                           cm_Copy, bo_Difference, flagsBool, operBoolNames, pSolidDiff);
+        //::DeleteObject(pCylSphereSolidSmall);
+
+        // Возможный отладочный вызов для проверки выполнения шага 3)
+        // if (pSolidDiff)
+        // show(pSolidDiff);
+
+        // Разбиение составного тела pSolidDiff на три тела: два снаружи и одно
+        // внутри pCylSphereSolid
+        if (res == rt_Success)
+        {
+            RPArray<MbSolid> parts;
+            MbSNameMaker detachNames(ct_DetachSolid, MbSNameMaker::i_SideNone, 0);
+
+            // При разделении тела pSolidDiff наибольшая часть остается в pSolidDiff,
+            // а меньшие (partsCnt штук) помещаются в массив parts (в порядке
+            // убывания габаритного размера)
+            size_t partsCnt = ::DetachParts(*pSolidDiff, parts, true, detachNames);
+            if (partsCnt == 2)
+            {
+                // Отбор внешних частей тела pSolidDiff
+                pPrismPart1 = parts[0];
+                pPrismPart2 = parts[1];
+                // Удаление лишней части, которая находится внутри тела выдавливания
+                ::DeleteItem(pSolidDiff);
+           }
+       }
+   }
+
+    // 4) ВЫРЕЗАНИЕ КВАДРАТНЫХ ОТВЕРСТИЙ ИЗ pCylSphereSolid
+    MbSolid* pCylSphereHolesSolid = nullptr;
+    {
+        // Булева операция - разность тел: pSolidDiff = pCylSphereSolid - pPrismSolid
+        MbSolid* pSolidDiff = nullptr;
+        MbResultType res = ::BooleanResult(*pCylSphereSolid, cm_Copy, *pPrismSolid,
+                           cm_Copy, bo_Difference, flagsBool, operBoolNames, pSolidDiff);
+
+        // Возможный отладочный вызов для проверки выполнения шага 4)
+        // if (pSolidDiff)
+        // show(pSolidDiff);
+
+        // Разбиение составного тела pSolidDiff на три тела
+        if (res == rt_Success)
+        {
+            RPArray<MbSolid> parts;
+            MbSNameMaker detachNames(ct_DetachSolid, MbSNameMaker::i_SideNone, 0);
+            size_t partsCnt = ::DetachParts(*pSolidDiff, parts, true, detachNames);
+
+            if (partsCnt == 2)
+            {
+                // Сохранение части, которая будет использоваться для результирующей модели
+                pCylSphereHolesSolid = pSolidDiff;
+                // Удаление частей, соответствующих квадратным отверстиям в теле вращения
+                ::DeleteItem(parts[0]);
+                ::DeleteItem(parts[1]);
+           }
+       }
+   }
+
+    // 5) ПОСТРОЕНИЕ РЕЗУЛЬТИРУЮЩЕГО ТЕЛА pResSolid: ОБЪЕДИНЕНИЕ ТРЕХ ТЕЛ
+    // pCylSphereHolesSolid, pPrismPart1 И pPrismPart2
+    MbSolid* pResSolid = nullptr;
+    {
+        // Построение промежуточного тела: pSolid1 = pCylSphereHolesSolid + pPrismPart1
+        MbSolid* pSolid1 = nullptr;
+        ::BooleanResult(*pCylSphereHolesSolid, cm_Copy, *pPrismPart1, cm_Copy, bo_Union,
+                        flagsBool, operBoolNames, pSolid1);
+
+        // Построение результирующего тела: pResSolid = pSolid1 + pPrismPart2
+        ::BooleanResult(*pSolid1, cm_Copy, *pPrismPart2, cm_Copy, bo_Union,
+                        flagsBool, operBoolNames, pResSolid);
+
+        // Уменьшение счетчика ссылок промежуточного тела, которое больше не потребуется
+        ::DeleteItem(pSolid1);
+   }
+
+    // ОТОБРАЖЕНИЕ РЕЗУЛЬТИРУЮЩЕГО ТВЕРДОГО ТЕЛА
+    if (pResSolid)
+        show(pResSolid);
+
+    // УМЕНЬШЕНИЕ СЧЕТЧИКА ССЫЛОК ДИНАМИЧЕСКИ СОЗДАННЫХ ОБЪЕКТОВ ЯДРА
+    ::DeleteItem(pCylSphereSolid);
+    ::DeleteItem(pPrismSolid);
+    ::DeleteItem(pPrismPart1);
+    ::DeleteItem(pPrismPart2);
+    ::DeleteItem(pCylSphereHolesSolid);
+    ::DeleteItem(pResSolid);
+
+    return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+
+#include <cur_bezier.h>
+#include <cur_bezier3d.h>
+
+#include <mb_placement3d.h>
+#include <cur_arc3d.h>
+#include <cur_arc.h>
+#include <action_surface.h>
+#include <mb_axis3d.h>
+#include <surface.h>
+
+using namespace c3d;
+
+bool run()
+{
+    const double DEG_TO_RAD = M_PI/180.0;
+    MbPlacement3D plArc;   // СК для построения образующей (совпадает с мировой)
+    MbPlacement3D plSpine; // СК для построения направляющей
+
+    //Построение двумерной образующей кривой - окружности
+    const double RAD = 10;
+    const MbCartPoint arcCenter(0, 0);
+    // Построение окружности на плоскости по центру и радиусу
+    MbArc* pArc2D = new MbArc(arcCenter, RAD);
+    // Построение окружности в трехмерном пространстве
+    MbArc3D* pArc = new MbArc3D(*pArc2D, plArc);
+
+    // Построение двумерной направляющей - кривой Безье
+    SArray<MbCartPoint> arrPnts(4);
+    arrPnts.Add(MbCartPoint(0, 0));
+    arrPnts.Add(MbCartPoint(40, 30));
+    arrPnts.Add(MbCartPoint(70, -30));
+    arrPnts.Add(MbCartPoint(100, 0));
+    // Используется конструктор для построения по четырем контрольным точкам
+    MbBezier* pSpine = MbBezier::Create(arrPnts);
+
+    // Поворот локальной системы координат вокруг оси Y мировой системы координат до
+    // совмещения плоскости XY локальной СК с плоскостью XZ мировой СК
+    plSpine.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 1, 0))),
+                   -90*DEG_TO_RAD);
+
+    // Построение трехмерной кривой Безье на основе двумерной с использованием
+    // конструктора, принимающего на вход двумерную кривую и локальную
+    // систему координат строящейся трехмерной кривой
+    MbBezier3D* pBezier = MbBezier3D::Create(*pSpine, plSpine);
+
+    // Вызов функции построения поверхности сдвига
+    MbSurface* pSurface = nullptr;
+    ::ExpansionSurface(*pArc, *pBezier, nullptr, pSurface);
+
+    // Отображение полученной поверхности
+    show(Style(1, RGB(0, 0, 255)), pSurface);
+
+    ::DeleteItem(pSurface);
+    ::DeleteItem(pBezier);
+    ::DeleteItem(pSpine);
+    ::DeleteItem(pArc);
+    ::DeleteItem(pArc2D);
+
+    return true;
+}
+[end]
+[id = "code_block_7"]
+[begin]
+#include "setup.h"
+
+#include <cur_bezier.h>
+#include <cur_bezier3d.h>
+#include <cur_arc3d.h>
+#include <cur_arc.h>
+#include <action_surface.h>
+#include <mb_axis3d.h>
+#include <surface.h>
+
+using namespace c3d;
+
+bool run()
+{
+    const double DEG_TO_RAD = M_PI / 180.0;
+    MbPlacement3D plArc1;  // СК для построения первой образующей (совпадает с мировой)
+    MbPlacement3D plSpine; // СК для построения направляющей (вычисляется далее)
+    MbPlacement3D plArc2;  // СК для построения второй образующей (вычисляется далее)
+
+    // Построение двумерной образующей кривой - окружности
+    const double RAD = 10;
+    const MbCartPoint arcCenter(0, 0);
+    // Построение окружности на плоскости по центру и радиусу
+    MbArc* pArc2D_1 = new MbArc(arcCenter, RAD);
+    // Построение окружности в трехмерном пространстве
+    MbArc3D* pArc1 = new MbArc3D(*pArc2D_1, plArc1);
+
+    // Построение двумерной направляющей - кривой Безье
+    SArray<MbCartPoint> arrPnts(4);
+    arrPnts.Add(MbCartPoint(0, 0));
+    arrPnts.Add(MbCartPoint(40, 30));
+    arrPnts.Add(MbCartPoint(70, -30));
+    arrPnts.Add(MbCartPoint(100, 0));
+    // Используется конструктор для построения по четырем контрольным точкам
+    MbBezier* pSpine =  MbBezier::Create(arrPnts);
+
+    // Поворот локальной системы координат вокруг оси Y мировой системы координат до
+    // совмещения плоскости XY локальной СК с плоскостью XZ мировой СК
+    plSpine.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 1, 0))),
+                   -90 * DEG_TO_RAD);
+
+    // Построение трехмерной кривой Безье на основе двумерной двухмерной с использованием    
+    // конструктора, принимающего на вход двумерную кривую и локальную систему
+    // координат строящейся трехмерной кривой
+    MbBezier3D* pBezier = MbBezier3D::Create(*pSpine, plSpine);
+
+    // Перенос локальной системы координат второй окружности в
+    // конечную точку направляющей кривой
+    plArc2.Move(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 0, 100)));
+
+    // Построение второй образующей - окружности в конце получаемой поверхности
+    MbArc* pArc2D_2 = new MbArc(arcCenter, RAD*3);
+    MbArc3D* pArc2 = new MbArc3D(*pArc2D_2, plArc2);
+
+    // Вызов функции построения поверхности сдвига
+    MbSurface* pSurface = nullptr;
+    ::ExpansionSurface(*pArc1, *pBezier, pArc2, pSurface);
+ 
+    // Отображение полученной поверхности
+    show(Style(1, RGB(0, 0, 255)), pSurface);
+
+    ::DeleteItem(pSurface);
+    ::DeleteItem(pBezier);
+    ::DeleteItem(pSpine);
+    ::DeleteItem(pArc2D_1);
+    ::DeleteItem(pArc1);
+    ::DeleteItem(pArc2D_2);
+    ::DeleteItem(pArc2);
+
+    return true;
+}
+[end]
+[id = "code_block_8"]
+[begin]
+#include "setup.h"
+
+#include <cur_arc3d.h>
+#include <cur_arc.h>
+#include <action_surface.h>
+#include <mb_axis3d.h>
+#include <surface.h>
+
+using namespace c3d;
+
+bool run()
+{
+    const double DEG_TO_RAD = M_PI/180.0;
+    MbPlacement3D plArc;   // СК для построения первой образующей (совпадает с мировой)
+    MbPlacement3D plCurve; // СК для построения направляющей (вычисляется далее)
+
+    // Поворот локальной СК направляющей кривой из плоскости XY в плоскость XZ
+    // мировой системы координат
+    plCurve.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(1, 0, 0))),
+                   90*DEG_TO_RAD);
+
+    // Построение двумерной образующей кривой - окружности
+    const double RAD = 10;
+    const MbCartPoint arcCenter(0, 0);
+    // Построение окружности на плоскости по центру и радиусу
+    MbArc* pArc2D = new MbArc(arcCenter, RAD);
+    // Построение окружности в трехмерном пространстве
+    MbArc3D* pArc = new MbArc3D(*pArc2D, plArc);
+
+    // Построение направляющей кривой - дуги окружности
+    // Сначала строится дуга двумерной окружности по центру окружности, радиусу,
+    // начальной и конечной точкам
+    MbArc* pCurve2D = new MbArc(MbCartPoint(-50,0), 50, MbCartPoint(0, 0),
+                                MbCartPoint(-50, 50), 1);
+    // Построение дуги трехмерной окружности
+    MbArc3D* pCurve = new MbArc3D(*pCurve2D, plCurve);
+
+    // Вызов функции построения кинематической поверхности
+    MbSurface* pSurface = nullptr;
+    ::EvolutionSurface(*pArc, *pCurve, pSurface);
+
+    // Отображение построенной поверхности
+    show(Style(1, RGB(0, 0, 255)), pSurface);
+    ::DeleteItem(pSurface);
+    ::DeleteItem(pCurve2D);
+    ::DeleteItem(pCurve);
+    ::DeleteItem(pArc2D);
+    ::DeleteItem(pArc);
+
+    return true;
+}
+[end]

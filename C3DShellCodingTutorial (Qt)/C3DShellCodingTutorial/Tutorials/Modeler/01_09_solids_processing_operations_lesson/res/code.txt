@@ -1,0 +1,927 @@
+[id = "code_block_1"]
+[begin]
+#include "setup.h"
+#include "action_solid.h" 
+#include <surf_plane.h>
+using namespace c3d;
+
+bool run()
+{
+    // Объект-именователь для построения элементарных тел
+    MbSNameMaker elNames(ct_ElementarySolid, MbSNameMaker::i_SideNone);
+
+    // Построение цилиндра, в котором затем будет построено
+    // глухое отверстие и сферическая полость.
+    SArray<MbCartPoint3D> pntsCyl(3);
+    pntsCyl.Add( MbCartPoint3D(0, 0, 0) );
+    pntsCyl.Add( MbCartPoint3D(0, 100, 0) );
+    pntsCyl.Add( MbCartPoint3D(25, 0, 0) );
+    MbSolid* pCylMain = NULL;
+    ::ElementarySolid( pntsCyl, et_Cylinder, elNames, pCylMain ); 
+
+    // Построение цилиндра - образа глухого отверстия
+    SArray<MbCartPoint3D> pntsCylHole(3);
+    pntsCylHole.Add( MbCartPoint3D(0, 50, 0) );
+    pntsCylHole.Add( MbCartPoint3D(0, 100, 0) );
+    pntsCylHole.Add( MbCartPoint3D(3, 50, 0) );
+    MbSolid* pCylHole = NULL;
+    ::ElementarySolid( pntsCylHole, et_Cylinder, elNames, pCylHole ); 
+
+    // Построение сферы - образа полости
+    SArray<MbCartPoint3D> pntsSphere(3);
+    pntsSphere.Add( MbCartPoint3D(0, 45, 0) );
+    pntsSphere.Add( MbCartPoint3D(0, 60, 0) );
+    pntsSphere.Add( MbCartPoint3D(15, 45, 0) );
+    MbSolid* pSphereCavity = NULL;
+    ::ElementarySolid( pntsSphere, et_Sphere, elNames, pSphereCavity ); 
+
+    // Построение глухого отверстия и полости в цилиндре pCylMain с помощью
+    // булевой операции разности тел:
+    // pSolid = pCylMain - pCylHole - pSphereCavity
+    RPArray<MbSolid> holeSolids(2);
+    MbSolid* pSolid = NULL;
+    holeSolids.Add( pCylHole );
+    holeSolids.Add( pSphereCavity );
+    ::UnionResult( pCylMain, cm_Same, holeSolids, cm_Same, bo_Difference,
+    true, true, MbSNameMaker(ct_UnionSolid, MbSNameMaker::i_SideNone),
+    false, pSolid ); 
+
+    // Выполнение операции разрезания тела поверхностью:
+    //	1) Инициализация переменных-параметров операции
+    //	2) Вызов функции SolidCutting
+    // Секущая поверхность: плоскость, построенная по трем точкам
+    MbPlane* pCutPlane = new MbPlane( MbCartPoint3D(0, 0, 0),
+    MbCartPoint3D(1, 0, 0), MbCartPoint3D(0, 1, 0) );   // Направление отсечения: будет сохранена часть тела, расположенная снизу поверхности
+    int part = -1;
+    // Объект-именователь для операции построения разреза
+    MbSNameMaker operNames( ct_CuttingSolid, MbSNameMaker::i_SideNone );
+    // Тело при сечении считается замкнутым (результат показан на рис. 1(б)).
+    // В случае closed = false результат будет таким, как на рис. 1(в).
+    bool closed = true;
+    // Флаги объединения общих граней и ребер
+    MbMergingFlags mergeFlags(true, true);
+    // pCuttedSolid - часть тела pSolid после выполнения разреза
+    MbSolid* pCuttedSolid = NULL;
+    // Выполнение операции сечения тела поверхностью
+    MbResultType res = ::SolidCutting( *pSolid, cm_Copy, *pCutPlane, part, operNames,
+    closed, mergeFlags, pCuttedSolid );
+    if (res == rt_Success)
+	show( BLUE, pCuttedSolid );
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    /*
+    ::DeleteItem( pCylMain );
+    ::DeleteItem( pCylHole );
+    ::DeleteItem( pSphereCavity ); 
+    ::DeleteItem( pCutPlane );
+    ::DeleteItem( pSolid );
+    ::DeleteItem( pCuttedSolid );
+    */
+    return true;
+}
+[end]
+[id = "code_block_2"]
+[begin]
+#include "setup.h"
+#include "action_solid.h"
+#include <cur_nurbs3d.h>
+#include <surf_cover_surface.h>
+
+using namespace c3d;
+
+bool run()
+{
+    // Объект-именователь для построения элементарных тел
+    MbSNameMaker elNames(ct_ElementarySolid, MbSNameMaker::i_SideNone);
+
+    // Построение параллелепипеда pBlock по массиву точек
+    SArray<MbCartPoint3D> pntsBlock(4);
+    pntsBlock.Add(MbCartPoint3D(-50, 0, -100));
+    pntsBlock.Add(MbCartPoint3D(-50, 0, 100));
+    pntsBlock.Add(MbCartPoint3D(50, 0, -100));
+    pntsBlock.Add(MbCartPoint3D(-50, 100, -100));
+    MbSolid* pBlock = NULL; 
+
+    ::ElementarySolid(pntsBlock, et_Block, elNames, pBlock); 
+
+    // Построение цилиндра pCyl
+    SArray<MbCartPoint3D> pntsCyl(3);
+    pntsCyl.Add(MbCartPoint3D(0, 50, -30));
+    pntsCyl.Add(MbCartPoint3D(0, 50, 30));
+    pntsCyl.Add(MbCartPoint3D(0, 10, -30));
+    MbSolid* pCyl = NULL;
+    ::ElementarySolid(pntsCyl, et_Cylinder, elNames, pCyl); 
+
+    // Построение параллелепипеда с цилиндрической полостью посредством
+    // вычитания твердых тел: pSolidWithHole = pBlock - pCyl
+    RPArray<MbSolid> holeSolids(2);
+    MbSolid* pSolidWithHole = NULL;
+    holeSolids.Add(pCyl);
+    ::UnionResult( pBlock, cm_Same, holeSolids, cm_Same, bo_Difference, true, true,
+
+
+    MbSNameMaker(ct_UnionSolid, MbSNameMaker::i_SideNone, 0),
+    false, pSolidWithHole ); 
+
+    // Массивы точек для построения четырех граничных кривых режущей поверхности
+    SArray<MbCartPoint3D> pntsCurv1(3);
+    pntsCurv1.Add(MbCartPoint3D(-100, 100, 20));
+    pntsCurv1.Add(MbCartPoint3D(0,100, 20));
+    pntsCurv1.Add(MbCartPoint3D(100, 100, 20)); 
+
+    SArray<MbCartPoint3D> pntsCurv2(3);
+    pntsCurv2.Add(MbCartPoint3D(100, 100, 20));
+    pntsCurv2.Add(MbCartPoint3D(100, 0, 0));
+    pntsCurv2.Add(MbCartPoint3D(100, -100, 20)); 
+
+    SArray<MbCartPoint3D> pntsCurv3(3);
+    pntsCurv3.Add(MbCartPoint3D(100, -100, 20));
+    pntsCurv3.Add(MbCartPoint3D(0, -100, 20));
+    pntsCurv3.Add(MbCartPoint3D(-100, -100, 20)); 
+
+    SArray<MbCartPoint3D> pntsCurv4(3);
+    pntsCurv4.Add(MbCartPoint3D(-100, -100, 20));
+    pntsCurv4.Add(MbCartPoint3D(-100, 0, 0));
+    pntsCurv4.Add(MbCartPoint3D(-100, 100, 20)); 
+
+    // Построение граничных кривых режущей поверхности в виде NURBS-сплайнов,
+    // проходящих через заданные точки
+    ptrdiff_t degree = 3;
+    MbNurbs3D* pCurve1 = MbNurbs3D::Create(degree, pntsCurv1, false);
+    MbNurbs3D* pCurve2 = MbNurbs3D::Create(degree, pntsCurv2, false);
+    MbNurbs3D* pCurve3 = MbNurbs3D::Create(degree, pntsCurv3, false);
+    MbNurbs3D* pCurve4 = MbNurbs3D::Create(degree, pntsCurv4, false); 
+
+    // Построение режущей поверхности pCutSurface (билинейная поверхность)
+    MbCoverSurface* pCutSurface = new MbCoverSurface( *pCurve1, *pCurve2,
+    *pCurve3, *pCurve4 );
+    // Направление отсечения: будет сохранена часть тела, расположенная сверху
+    // режущей поверхности
+    int cutDir = 1;
+    // Объект-именователь для операции построения разреза
+    MbSNameMaker operNames( ct_CuttingSolid, MbSNameMaker::i_SideNone, 0 );
+    // Тело при сечении считается замкнутым
+    bool closed = true;
+    // Флаги объединения общих граней и ребер
+    MbMergingFlags mergeFlags(true, true);
+    // pCuttedSolid - часть тела pSolid после выполнения разреза
+    MbSolid* pCuttedSolid = NULL; 
+
+
+    // Выполнение операции сечения тела поверхностью
+    MbResultType res = ::SolidCutting( *pSolidWithHole, cm_Copy, *pCutSurface,
+    cutDir, operNames, closed,
+    mergeFlags, pCuttedSolid );
+    if (res == rt_Success)
+    show( BLUE, pCuttedSolid ); 
+
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    /*
+    ::DeleteItem(pBlock);
+    ::DeleteItem(pCurve1);
+    ::DeleteItem(pCurve2);
+    ::DeleteItem(pCurve3);
+    ::DeleteItem(pCurve4);
+    ::DeleteItem(pCutSurface);
+    ::DeleteItem(pSolidWithHole);
+    ::DeleteItem(pCuttedSolid);
+    */
+    return true;
+
+} 
+[end]
+[id = "code_block_3"]
+[begin]
+#include "setup.h"
+#include <action_solid.h>
+#include <alg_curve_fillet.h> 
+#include <cur_polyline.h>
+#include <surf_plane.h>
+using namespace c3d;
+
+// Построение исходного твердого тела для последующего сечения
+void CreateSourceSolid(MbSolid*& _pSolid)
+{
+    // Объект-именователь для построения элементарных тел
+    MbSNameMaker elNames(ct_ElementarySolid, MbSNameMaker::i_SideNone);
+
+    // 1) Цилиндр - основная часть исходного тела
+    MbSolid* pCyl = NULL;
+    {
+    SArray<MbCartPoint3D> pntsCyl(3);
+    pntsCyl.Add(MbCartPoint3D(0, 0, -80));
+    pntsCyl.Add(MbCartPoint3D(0, 150, -80));
+    pntsCyl.Add(MbCartPoint3D(50, 0, -80));
+    ::ElementarySolid(pntsCyl, et_Cylinder, elNames, pCyl);
+    } 
+
+    // 2) Построение цилиндра - образа центрального отверстия внутри pCyl
+    MbSolid* pCylDif = NULL;
+    {
+    SArray<MbCartPoint3D> pntsCylDif(3);
+    pntsCylDif.Add(MbCartPoint3D(0, 0, -80));
+    pntsCylDif.Add(MbCartPoint3D(0, 150, -80));
+    pntsCylDif.Add(MbCartPoint3D(40, 0, -80));
+    ::ElementarySolid(pntsCylDif, et_Cylinder, elNames, pCylDif);
+    } 
+
+    // 3) Построение цилиндра - образа поперечного отверстия в боковой поверхности pCyl
+    MbSolid* pCylDifSide = NULL;
+    {
+    SArray<MbCartPoint3D> pntsCylDifSide(3); 
+    pntsCylDifSide.Add(MbCartPoint3D(51, 100, -80));
+    pntsCylDifSide.Add(MbCartPoint3D(-51, 100, -80));
+    pntsCylDifSide.Add(MbCartPoint3D(51, 110, -80));
+    ::ElementarySolid(pntsCylDifSide, et_Cylinder, elNames, pCylDifSide);
+    } 
+
+    // 4) Построение тела выдавливания, соединенного с основным цилиндром pCyl
+    MbSolid* pSolidSide = NULL;
+    {
+    // Замкнутый контур - образующая для построения тела pSolidSide
+    RPArray<MbContour> arrContours;
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add(MbCartPoint(-20, 0));
+    arrPnts.Add(MbCartPoint(-20, 10));
+    arrPnts.Add(MbCartPoint(20, 10));
+    arrPnts.Add(MbCartPoint(20, 0));
+    MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+    MbContour* pContourPolyline = NULL;
+    ::FilletPolyContour( pPolyline, 5 /* Радиус скругления */, false,
+    arrPnts[1], pContourPolyline);
+    ptrdiff_t idxSideRight = 2;
+    pContourPolyline->FilletTwoSegments(idxSideRight, 5 /* Радиус скругления */);
+    arrContours.push_back(pContourPolyline); 
+
+
+    MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0),
+    MbCartPoint3D(1, 0, 0), MbCartPoint3D(0, 1, 0));
+    MbSweptData sweptData(*pPlaneXY, arrContours);
+    MbVector3D dir(0, 0, -1);
+    const double HEIGHT_FORWARD = 40.0, HEIGHT_BACKWARD = 0;
+    ExtrusionValues extrusionParam(HEIGHT_FORWARD, HEIGHT_BACKWARD);
+    extrusionParam.side1.way = sw_shell;
+    MbSNameMaker operNames(ct_CurveExtrusionSolid, MbSNameMaker::i_SideNone, 0);
+    PArray<MbSNameMaker> cNames(0, 1, false);
+    ::ExtrusionSolid( sweptData, dir, pCyl, NULL, false, extrusionParam,
+    operNames, cNames, pSolidSide );
+
+    ::DeleteItem(pPlaneXY);
+    }
+
+    // 5) Построение цилиндра - образа отверстия в теле выдавливания pSolidSide
+    MbSolid* pCylHoleSide = NULL;
+    {
+    SArray<MbCartPoint3D> pnts(3);
+    pnts.Add(MbCartPoint3D(0, 0, -15));
+    pnts.Add(MbCartPoint3D(0, 10, -15));
+    pnts.Add(MbCartPoint3D(0, 0, -10));
+    ::ElementarySolid(pnts, et_Cylinder, elNames, pCylHoleSide);
+    } 
+
+    // 6) Формирование центрального и боковых отверстий pCyl:
+    // pMainSolid = pCyl - pCylDif - pCylDifSide;
+    MbSolid* pMainSolid = NULL;
+    {
+    RPArray<MbSolid> holeSolids(2);
+    holeSolids.Add(pCylDif);
+    holeSolids.Add(pCylDifSide);
+    ::UnionResult( pCyl, cm_Same, holeSolids, cm_Same, bo_Difference, true, true,
+    MbSNameMaker(ct_UnionSolid, MbSNameMaker::i_SideNone, 0),
+    false, pMainSolid );
+    } 
+
+    // 7) Построение отверстия в теле выдавливания pSolidSide: 
+
+    // pSolidSide = pSolidSide - pCylHoleSide
+    MbSNameMaker operBoolNames(ct_BooleanSolid, MbSNameMaker::i_SideNone, 0);
+    MbBooleanFlags flagsBool;
+    flagsBool.InitBoolean(true);
+    flagsBool.SetMergingFaces(true);
+    flagsBool.SetMergingEdges(true);
+    ::BooleanResult( *pSolidSide, cm_Copy, *pCylHoleSide, cm_Copy, bo_Difference,
+    flagsBool, operBoolNames, pSolidSide ); 
+
+    // 8) Объединение основного тела и тела выдавливания
+    ::BooleanResult( *pMainSolid, cm_Copy, *pSolidSide, cm_Copy, bo_Union,
+    flagsBool, operBoolNames, _pSolid ); 
+
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    /*
+    ::DeleteItem(pCyl);
+    ::DeleteItem(pCylDif);
+    ::DeleteItem(pCylDifSide);
+    ::DeleteItem(pSolidSide);
+    ::DeleteItem(pCylHoleSide);
+    ::DeleteItem(pMainSolid);
+    */
+} 
+
+bool run()
+{
+    // 1) Построение исходного тела с помощью вспомогательной функции
+    MbSolid* pSourceSolid = NULL;
+    CreateSourceSolid(pSourceSolid); 
+
+    // 2) Построение контура - образующей кривой режущей поверхности выдавливания
+    MbContour* pContour = NULL;
+    {
+    SArray<MbCartPoint> arrPnts(3);
+    arrPnts.Add(MbCartPoint(50, -80));
+    arrPnts.Add(MbCartPoint(0, -80));
+    arrPnts.Add(MbCartPoint(0, 0));
+    MbPolyline* pPolyline = new MbPolyline(arrPnts, false);
+    pContour = new MbContour(*pPolyline, true);
+    //::DeleteItem( pPolyline );
+    } 
+
+    // 3) Локальная СК контура: повернута на 90 градусов вокруг оси X глобальной СК,
+    // чтобы контур располагался в плоскости XZ глобальной СК.
+    MbPlacement3D plContour;
+    const double DEG_TO_RAD = M_PI / 180.0;
+    plContour.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0),
+    MbCartPoint3D(1, 0, 0))), 90 * DEG_TO_RAD); 
+
+    // 4) Вызов функции SolidCutting для сечения тела поверхностью выдавливания 
+
+    MbSolid* pCuttedSolid = NULL;
+    MbSNameMaker operNames((SimpleName)ct_CuttingSolid, MbSNameMaker::i_SideNone, 0);
+    int  partNum = 1;
+    // Получение части тела, расположенной выше режущей поверхности
+    bool closed = true;
+    // Полученное замкнутого тела
+    // Направление выдавливания.
+    // Вектор dir задает направление проецирования исходного тела на плоскость
+    // образующего контура. СК plContour направлена так, что контур лежит в плоскости XZ
+    // глобальной СК. Чтобы получить проекцию исходного тела на эту плоскость, надо
+    // выполнить проецирование в отрицательном направлении оси OY глобальной СК.
+    // Именно это направление и задает вектор направления выдавливания dir.
+    // Это направление противоположно тому направлению, в котором бы двигался режущий
+    // контур относительно исходного тела.
+    MbVector3D dir( MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, -1, 0) ); 
+
+    MbMergingFlags mergeFlags(true, true);  // Флаги, задающие слияние граней и ребер
+    MbResultType res = ::SolidCutting( *pSourceSolid, cm_Copy, plContour, *pContour, dir,
+    partNum, operNames, closed, mergeFlags, pCuttedSolid );  
+
+    // 5) Отображение тела после сечения и образующего контура режущей поверхности
+    if (res == rt_Success)
+    {
+		show( BLUE, pCuttedSolid );
+
+		show( Style(1, RGB(0, 0, 255)), pContour, &plContour );
+    } 
+
+    // 6) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    /*
+    ::DeleteItem(pSourceSolid);
+    ::DeleteItem(pCuttedSolid);
+    ::DeleteItem(pContour);
+    */
+    return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"
+#include <action_solid.h>
+#include <alg_curve_fillet.h> 
+#include <cur_polyline.h>
+#include <surf_plane.h>
+using namespace c3d;
+ 
+// Построение образующего контура тела выдавливания (рис. 10а)
+void CreateSketch( RPArray<MbContour>& _arrContours )
+{
+	SArray<MbCartPoint> arrPnts(6);
+	arrPnts.Add(MbCartPoint(20, 0));
+	arrPnts.Add(MbCartPoint(20, 30));
+	arrPnts.Add(MbCartPoint(30, 30));
+	arrPnts.Add(MbCartPoint(30, 50));
+	arrPnts.Add(MbCartPoint(0, 50));
+	arrPnts.Add(MbCartPoint(0, 0));
+	MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+	MbContour* pContourPolyline = NULL;
+	::FilletPolyContour(pPolyline, 5, false, arrPnts[1], pContourPolyline);
+	ptrdiff_t idxSideRight = 2;
+	ptrdiff_t idxSideRight2 = 3;
+	pContourPolyline->FilletTwoSegments(idxSideRight, 5);
+	pContourPolyline->FilletTwoSegments(idxSideRight2, 5); 
+
+	_arrContours.push_back(pContourPolyline);
+} 
+
+bool run()
+{
+	// 1) Получение образующей кривой для исходной части требуемого тела
+	// (эта часть выглядит как четверть результирующего тела, рис. 10б)
+	RPArray<MbContour> arrContours;
+	CreateSketch(arrContours);  
+	
+	// 2) Построение исходной составной части pPart1 (рис. 10б) как тела выдавливания
+	// с образующей кривой arrContours (рис. 10а)
+	MbSolid* pPart1 = NULL;
+	{
+		MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0),
+		MbCartPoint3D(1, 0, 0), MbCartPoint3D(0, 1, 0));
+		MbSweptData sweptData(*pPlaneXY, arrContours);
+		// Направление выдавливания
+		MbVector3D dir(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 0, 1));
+
+		const double HEIGHT_FORWARD = 10.0, HEIGHT_BACKWARD = 0;
+		ExtrusionValues extrusionParams(HEIGHT_FORWARD, HEIGHT_BACKWARD);
+		MbSNameMaker operNames(ct_CurveExtrusionSolid, MbSNameMaker::i_SideNone, 0);
+		PArray<MbSNameMaker> cNames(0, 1, false);
+		::ExtrusionSolid( sweptData, dir, NULL, NULL, false, extrusionParams,
+		operNames, cNames, pPart1 );
+		::DeleteItem(pPlaneXY);
+	} 
+
+	// 3) Вызов операции зеркальной симметрии для тела pPart1, чтобы построить
+	// тело pPart2, представляющее собой половину требуемого тела (рис. 10в).
+	MbSolid* pPart2 = NULL;
+	const double DEG_TO_RAD = M_PI / 180.0;
+	// Именователь для функции SymmetrySolid
+	MbSNameMaker operNames(ct_SymmetrySolid, MbSNameMaker::i_SideNone);
+	// Локальная СК, относительно плоскости XY которой будет выполняться симметрия
+	MbPlacement3D plSym;
+	// Поворот СК плоскости симметрии чтобы ее плоскость XY совпала с
+	// плоскостью YZ глобальной СК
+	plSym.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0),
+	MbCartPoint3D(0, 1, 0))), -90 * DEG_TO_RAD);
+	MbResultType resPart2 = ::SymmetrySolid(*pPart1, cm_Copy, plSym, operNames, pPart2); 
+
+	// 4) Вызов операции зеркальной симметрии для тела pPart2 для построения
+	// результирующего тела pSolid (рис. 10г).
+	MbSolid* pSolid = NULL;
+	if ( resPart2 == rt_Success )
+	{
+		// Поворот локальной СК, чтобы ее XY совпала с плоскостью XZ мировой СК
+
+		plSym.Rotate(MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0),
+		MbCartPoint3D(0, 0, 1))), 90 * DEG_TO_RAD);
+
+		MbResultType res = ::SymmetrySolid(*pPart2, cm_Copy, plSym, operNames, pSolid );
+		if (res == rt_Success)
+
+		show(Style(1, LIGHTGRAY), pSolid);
+	} 
+
+	// 5) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem(pPart1);
+	::DeleteItem(pPart2);
+	::DeleteItem(pSolid);
+	*/
+	return true;
+}
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"
+#include <action_solid.h> 
+#include <cur_arc.h>
+#include <surf_plane.h>
+
+using namespace c3d;
+
+// Построение контуров для тела по сечениям и поверхностей,
+// задающих расположение этих контуров
+void CreateSketch(RPArray<MbContour>& _arrContours, RPArray<MbSurface>& _surfaces)
+{
+    // Количество поперечных круговых сечений
+    const int CONTOUR_COUNT = 4;
+    // Радиусы круговых сечений
+    const double RAD[CONTOUR_COUNT] = { 20, 50, 20, 40 }; 
+
+    // Плоские круговые контуры, представляющие сечения тела
+    MbArc* pArc[CONTOUR_COUNT] = { 0 };
+    for (int i = 0; i < CONTOUR_COUNT; i++)
+	    pArc[i] = new MbArc(MbCartPoint(0, 0), RAD[i]); 
+
+    // Локальные СК, задающие расположение сечений тела
+    MbPlacement3D plArc[CONTOUR_COUNT] = {
+	    MbPlacement3D(MbCartPoint3D(100,0, 0),
+		    MbCartPoint3D(101, 0, 0), MbCartPoint3D(100, 0, 1)),
+	    MbPlacement3D(MbCartPoint3D(100,  60, 0),
+		    MbCartPoint3D(101,  60, 0), MbCartPoint3D(100,  60, 1)),
+	    MbPlacement3D(MbCartPoint3D(100, 100, 0),
+		    MbCartPoint3D(101, 100, 0), MbCartPoint3D(100, 100, 1)),
+	    MbPlacement3D(MbCartPoint3D(100, 130, 0),
+		    MbCartPoint3D(101, 130, 0), MbCartPoint3D(100, 130, 1))
+    }; 
+
+    // Поверхности, содержащие сечения тела (плоскости, расположение которых
+    // задается системами координат plArc)
+    MbSurface* pSurfArc[CONTOUR_COUNT] = { 0 };
+    for (int i = 0; i < CONTOUR_COUNT; i++)
+	    pSurfArc[i] = new MbPlane(plArc[i]); 
+
+    // Представление сечений тела в виде контуров
+    MbContour* pContourArc[CONTOUR_COUNT] = { 0 };
+    for (int i = 0; i < CONTOUR_COUNT; i++)
+	    pContourArc[i] = new MbContour(*pArc[i], true); 
+
+    // Сохранение выходных данных
+    for (int i = 0; i < CONTOUR_COUNT; i++)
+    {
+	    _arrContours.push_back(pContourArc[i]);
+	    _surfaces.push_back(pSurfArc[i]);
+    } 
+
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    /*	for (int i = 0; i < CONTOUR_COUNT; i++)
+	    ::DeleteItem(pArc[i]);
+    */
+}
+
+bool run()
+{
+    // 1) Построение исходного тела pSolid по сечениям
+    RPArray<MbSurface> surfaces;
+    RPArray<MbContour> arrContours;
+    CreateSketch(arrContours, surfaces);
+    MbSolid* pSolid = NULL;
+    LoftedValues loftedParams;
+    MbSNameMaker loftNames(ct_CurveLoftedSolid);
+    PArray<MbSNameMaker> contourNames(0, 1, false);
+    MbResultType resSolid = ::LoftedSolid(surfaces, arrContours, NULL, loftedParams,
+	    NULL, NULL, loftNames, contourNames, pSolid); 
+
+    // 2) Построение для тела pSolid его зеркальной копии pSolidCopy
+    MbSolid* pSolidCopy = NULL;
+    // Локальная СК, у которой плоскость XY совпадает с плоскостью YZ глобальной СК
+    MbPlacement3D plSym;
+    const double DEG_TO_RAD = M_PI / 180.0;
+    plSym.Rotate( MbAxis3D(MbVector3D(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 1, 0))),
+	    -90 * DEG_TO_RAD );
+    MbSNameMaker symNames(ct_SymmetrySolid);
+    MbResultType resSolidCopy = ::MirrorSolid(*pSolid, plSym, symNames, pSolidCopy);  
+
+    // 3) Отображение исходного тела и его копии
+    if ( resSolid == rt_Success )
+	    show(Style(1, LIGHTGRAY), pSolid);
+    if ( resSolidCopy == rt_Success )
+	    show(Style(1, LIGHTGRAY), pSolidCopy);  
+
+    // 4) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    /*
+    ::DeleteItem(pSolid);
+    ::DeleteItem(pSolidCopy);
+    */
+    return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+#include <action_solid.h>
+#include <alg_curve_fillet.h>
+#include <cur_polyline.h>
+#include <surf_plane.h>
+
+using namespace c3d;
+
+// Построение образующей тела выдавливания (рис. 15а) в виде массива трех контуров
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+	// Внешний прямоугольный контур
+	MbContour* pContourExt = NULL;
+	{
+		SArray<MbCartPoint> arrPnts(5);
+		arrPnts.Add(MbCartPoint(0, 0));
+		arrPnts.Add(MbCartPoint(0, 500));
+		arrPnts.Add(MbCartPoint(150, 500));
+		arrPnts.Add(MbCartPoint(150, 0));
+		MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+		pContourExt = new MbContour(*pPolyline, true);
+		//::DeleteItem(pPolyline);
+	} 
+
+	// Внутренний контур - первое квадратное отверстие со скругленными углами
+	MbContour* pContourSqHole1 = NULL;
+	{
+		SArray<MbCartPoint> arrPnts(5);
+		arrPnts.Add(MbCartPoint(50, 50));
+
+		arrPnts.Add(MbCartPoint(50, 100));
+		arrPnts.Add(MbCartPoint(100, 100));
+		arrPnts.Add(MbCartPoint(100, 50));
+		MbPolyline* pPolyline = new MbPolyline(arrPnts, true); 
+
+
+		::FilletPolyContour(pPolyline, 5, false, arrPnts[4], pContourSqHole1); 
+
+
+		ptrdiff_t idxSideRight1 = 0;
+		ptrdiff_t idxSideRight2 = 2;
+		ptrdiff_t idxSideRight3 = 4;
+		pContourSqHole1->FilletTwoSegments(idxSideRight1, 5);
+		pContourSqHole1->FilletTwoSegments(idxSideRight2, 5);
+		pContourSqHole1->FilletTwoSegments(idxSideRight3, 5); 
+
+
+		//::DeleteItem(pPolyline);
+	} 
+
+	// Внутренний контур - второе квадратное отверстие со скругленными углами
+	MbContour* pContourSqHole2 = NULL;
+	{
+		SArray<MbCartPoint> arrPnts(5);
+		arrPnts.Add(MbCartPoint(50, 400));
+		arrPnts.Add(MbCartPoint(50, 450));
+		arrPnts.Add(MbCartPoint(100, 450));
+		arrPnts.Add(MbCartPoint(100, 400));
+		MbPolyline* pPolyline = new MbPolyline(arrPnts, true); 
+
+
+		::FilletPolyContour(pPolyline, 5, false, arrPnts[4], pContourSqHole2); 
+
+
+		ptrdiff_t idxSideRight1 = 0;
+		ptrdiff_t idxSideRight2 = 2;
+		ptrdiff_t idxSideRight3 = 4; 
+
+
+		pContourSqHole2->FilletTwoSegments(idxSideRight1, 5);
+		pContourSqHole2->FilletTwoSegments(idxSideRight2, 5);
+		pContourSqHole2->FilletTwoSegments(idxSideRight3, 5); 
+
+
+		//::DeleteItem(pPolyline);
+	} 
+
+	// Сохранение выходных данных
+	_arrContours.push_back(pContourExt);
+	_arrContours.push_back(pContourSqHole1);
+	_arrContours.push_back(pContourSqHole2); } 
+
+
+bool run()
+{
+	// 1) Построение исходного тела pSolid
+	MbSolid* pSolid = NULL;
+	MbResultType resSolid = rt_Success;
+	{
+		// 1.1) Построение части исходного тела pExtrSolid с двумя квадратными отверстиями
+		// как тела выдавливания
+
+		RPArray<MbContour> arrContours;
+		CreateSketch(arrContours); 
+		
+		MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0),
+		MbCartPoint3D(1, 0, 0), MbCartPoint3D(0, 1, 0));
+		MbSweptData sweptData(*pPlaneXY, arrContours);
+		MbVector3D  dir(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 0, 1));
+		const double HEIGHT_FORWARD = 40.0, HEIGHT_BACKWARD = 0;
+		ExtrusionValues extrusionParams(HEIGHT_FORWARD, HEIGHT_BACKWARD);
+		MbSNameMaker operNames(ct_CurveExtrusionSolid);
+		PArray<MbSNameMaker> contourNames(0, 1, false);
+		MbSolid* pExtrSolid = NULL;
+		::ExtrusionSolid( sweptData, dir, NULL, NULL, false, extrusionParams,
+		operNames, contourNames, pExtrSolid ); 
+
+		// 1.2) Построение образа бокового круглого отверстия (цилиндра)
+		SArray<MbCartPoint3D> pntsСyl(3);
+		MbSNameMaker elNames(ct_ElementarySolid);
+		MbSolid* pCylDiff = NULL;
+		pntsСyl.Add(MbCartPoint3D(0, 250, 20));
+		pntsСyl.Add(MbCartPoint3D(150, 250, 20));
+		pntsСyl.Add(MbCartPoint3D(0, 250, 30));
+		::ElementarySolid( pntsСyl, et_Cylinder, elNames, pCylDiff ); 
+		
+		// 1.3) Построение бокового отверстия в исходном теле с помощью
+		// булевой операции вычитания:
+		// pSolid = pExtrSolid - pCylDiff
+		MbSNameMaker operBoolNames(ct_BooleanSolid);
+		MbBooleanFlags flagsBool;
+		flagsBool.InitBoolean(true);
+		flagsBool.SetMergingFaces(true);
+		flagsBool.SetMergingEdges(true);
+		resSolid = ::BooleanResult( *pExtrSolid, cm_Copy, *pCylDiff, cm_Copy,
+		bo_Difference, flagsBool, operBoolNames, pSolid ); 
+
+
+		// 1.4) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+		/*
+		::DeleteItem(pCylDiff);
+		::DeleteItem(pExtrSolid);
+		::DeleteItem(pPlaneXY);
+		*/
+	} 
+
+	// 2) Вызов функции ThinSolid для построения разреза тонкостенного тела
+	MbSolid* pThinSolid = NULL;
+	{
+	// Получение массива граней исходного тела
+	RPArray<MbFace> faces(25, 25);
+	pSolid->GetFaces(faces); 
+
+	// Удаляемая грань исходного тела ("передняя")
+	RPArray<MbFace> outFaces(1, 1);
+	outFaces.Add(faces[5]); 
+
+	// Толщина стенок формируемого тонкостенного тела
+	SweptValues params;
+	params.thickness1 = 5; 
+	MbSNameMaker operNames(ct_ShellSolid);
+	MbResultType resThin = ::ThinSolid( *pSolid, cm_Same, outFaces, params,
+	operNames, true, pThinSolid ); 
+
+	if (resThin == rt_Success)
+
+	show(BLUE, pThinSolid);
+	} 
+
+	// 3) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem( pSolid );
+	::DeleteItem( pThinSolid );
+	*/
+	return true;
+}
+[end]
+[id = "code_block_7"]
+[begin]
+#include "setup.h"
+#include <action_solid.h>
+#include <alg_curve_fillet.h>
+#include <cur_polyline.h>
+#include <surf_plane.h>
+
+using namespace c3d;
+
+// Построение образующей тела выдавливания (рис. 15а) в виде массива трех контуров
+void CreateSketch(RPArray<MbContour>& _arrContours)
+{
+	// Внешний прямоугольный контур
+	MbContour* pContourExt = NULL;
+	{
+		SArray<MbCartPoint> arrPnts(5);
+		arrPnts.Add(MbCartPoint(0, 0));
+		arrPnts.Add(MbCartPoint(0, 500));
+		arrPnts.Add(MbCartPoint(150, 500));
+		arrPnts.Add(MbCartPoint(150, 0));
+		MbPolyline* pPolyline = new MbPolyline(arrPnts, true);
+		pContourExt = new MbContour(*pPolyline, true);
+		//::DeleteItem(pPolyline);
+	} 
+
+	// Внутренний контур - первое квадратное отверстие со скругленными углами
+	MbContour* pContourSqHole1 = NULL;
+	{
+		SArray<MbCartPoint> arrPnts(5);
+		arrPnts.Add(MbCartPoint(50, 50));
+
+		arrPnts.Add(MbCartPoint(50, 100));
+		arrPnts.Add(MbCartPoint(100, 100));
+		arrPnts.Add(MbCartPoint(100, 50));
+		MbPolyline* pPolyline = new MbPolyline(arrPnts, true); 
+
+
+		::FilletPolyContour(pPolyline, 5, false, arrPnts[4], pContourSqHole1); 
+
+
+		ptrdiff_t idxSideRight1 = 0;
+		ptrdiff_t idxSideRight2 = 2;
+		ptrdiff_t idxSideRight3 = 4;
+		pContourSqHole1->FilletTwoSegments(idxSideRight1, 5);
+		pContourSqHole1->FilletTwoSegments(idxSideRight2, 5);
+		pContourSqHole1->FilletTwoSegments(idxSideRight3, 5); 
+
+
+		//::DeleteItem(pPolyline);
+	} 
+
+	// Внутренний контур - второе квадратное отверстие со скругленными углами
+	MbContour* pContourSqHole2 = NULL;
+	{
+		SArray<MbCartPoint> arrPnts(5);
+		arrPnts.Add(MbCartPoint(50, 400));
+		arrPnts.Add(MbCartPoint(50, 450));
+		arrPnts.Add(MbCartPoint(100, 450));
+		arrPnts.Add(MbCartPoint(100, 400));
+		MbPolyline* pPolyline = new MbPolyline(arrPnts, true); 
+
+
+		::FilletPolyContour(pPolyline, 5, false, arrPnts[4], pContourSqHole2); 
+
+
+		ptrdiff_t idxSideRight1 = 0;
+		ptrdiff_t idxSideRight2 = 2;
+		ptrdiff_t idxSideRight3 = 4; 
+
+
+		pContourSqHole2->FilletTwoSegments(idxSideRight1, 5);
+		pContourSqHole2->FilletTwoSegments(idxSideRight2, 5);
+		pContourSqHole2->FilletTwoSegments(idxSideRight3, 5); 
+
+
+		//::DeleteItem(pPolyline);
+	} 
+
+	// Сохранение выходных данных
+	_arrContours.push_back(pContourExt);
+	_arrContours.push_back(pContourSqHole1);
+	_arrContours.push_back(pContourSqHole2); } 
+
+
+bool run()
+{
+	// 1) Построение исходного тела pSolid
+	MbSolid* pSolid = NULL;
+	MbResultType resSolid = rt_Success;
+	{
+		// 1.1) Построение части исходного тела pExtrSolid с двумя квадратными отверстиями
+		// как тела выдавливания
+
+		RPArray<MbContour> arrContours;
+		CreateSketch(arrContours); 
+		
+		MbPlane* pPlaneXY = new MbPlane(MbCartPoint3D(0, 0, 0),
+		MbCartPoint3D(1, 0, 0), MbCartPoint3D(0, 1, 0));
+		MbSweptData sweptData(*pPlaneXY, arrContours);
+		MbVector3D  dir(MbCartPoint3D(0, 0, 0), MbCartPoint3D(0, 0, 1));
+		const double HEIGHT_FORWARD = 40.0, HEIGHT_BACKWARD = 0;
+		ExtrusionValues extrusionParams(HEIGHT_FORWARD, HEIGHT_BACKWARD);
+		MbSNameMaker operNames(ct_CurveExtrusionSolid);
+		PArray<MbSNameMaker> contourNames(0, 1, false);
+		MbSolid* pExtrSolid = NULL;
+		::ExtrusionSolid( sweptData, dir, NULL, NULL, false, extrusionParams,
+		operNames, contourNames, pExtrSolid ); 
+
+		// 1.2) Построение образа бокового круглого отверстия (цилиндра)
+		SArray<MbCartPoint3D> pntsСyl(3);
+		MbSNameMaker elNames(ct_ElementarySolid);
+		MbSolid* pCylDiff = NULL;
+		pntsСyl.Add(MbCartPoint3D(0, 250, 20));
+		pntsСyl.Add(MbCartPoint3D(150, 250, 20));
+		pntsСyl.Add(MbCartPoint3D(0, 250, 30));
+		::ElementarySolid( pntsСyl, et_Cylinder, elNames, pCylDiff ); 
+		
+		// 1.3) Построение бокового отверстия в исходном теле с помощью
+		// булевой операции вычитания:
+		// pSolid = pExtrSolid - pCylDiff
+		MbSNameMaker operBoolNames(ct_BooleanSolid);
+		MbBooleanFlags flagsBool;
+		flagsBool.InitBoolean(true);
+		flagsBool.SetMergingFaces(true);
+		flagsBool.SetMergingEdges(true);
+		resSolid = ::BooleanResult( *pExtrSolid, cm_Copy, *pCylDiff, cm_Copy,
+		bo_Difference, flagsBool, operBoolNames, pSolid ); 
+
+
+		// 1.4) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+		/*
+		::DeleteItem(pCylDiff);
+		::DeleteItem(pExtrSolid);
+		::DeleteItem(pPlaneXY);
+		*/
+	} 
+
+	// 2) Вызов функции ThinSolid для построения разреза тонкостенного тела
+	MbSolid* pThinSolid = NULL;
+	{
+		// Получение массива граней исходного тела
+		RPArray<MbFace> faces(25, 25);
+		pSolid->GetFaces(faces); 
+
+
+		// Удаляемая грань исходного тела ("передняя")
+		RPArray<MbFace> outFaces(1, 1);
+		outFaces.Add(faces[5]); 
+
+
+		// Массив граней, для которых задаются индивидуальные значения толщины стенок
+		RPArray<MbFace> offFaces(2, 1);
+
+		offFaces.Add(faces[1]);
+		offFaces.Add(faces[0]); 
+
+
+		// Массив значений толщины стенок для граней offFaces
+		SArray<double> offDists;
+
+		offDists.Add(1);
+		offDists.Add(10); 
+
+
+		// Основное значение толщины стенок формируемого тонкостенного тела
+		SweptValues params;
+		params.thickness1 = 5; 
+
+
+		MbSNameMaker operNames(ct_ShellSolid);
+		MbResultType resThin = ::ThinSolid( *pSolid, cm_Same, outFaces, offFaces, offDists,
+			params, operNames, true, pThinSolid ); 
+		if (resThin == rt_Success)
+			show(BLUE, pThinSolid);
+	} 
+
+	// 3) Уменьшение счетчиков ссылок динамически созданных объектов ядра
+	/*
+	::DeleteItem( pSolid );
+	::DeleteItem( pThinSolid );
+	*/
+	return true;
+}
+[end]

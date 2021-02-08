@@ -1,0 +1,1021 @@
+[id = "code_block_1"]
+[begin]
+#include "setup.h"
+
+#include "cur_contour.h" // MbContour - контур в двумерном пространстве
+#include "cur_polyline.h" // MbPolyline - Ломаная линия
+#include "cur_arc.h" // MbArc - Эллиптическая дуга
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Вершины ломаной
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add( MbCartPoint(30, 40) );
+    arrPnts.Add( MbCartPoint(30, 20 ) );
+    arrPnts.Add( MbCartPoint(0, 20) );
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(100, 0) );
+    arrPnts.Add( MbCartPoint(100, 20) );
+    arrPnts.Add( MbCartPoint(70, 20) );
+    arrPnts.Add( MbCartPoint(70, 40) );
+    // Ломаная линия с вершинами arrPnts
+    MbPolyline* pPolyline = new MbPolyline( arrPnts, false /* Флаг незамкнутой линии */);
+    // Дуга окружности для замыкания ломаной.
+    // При построении указывается центр, радиус, начальная и конечная точки и
+    // направление обхода дуги между этими точками (значение initSense>0 соответствует
+    // обходу против часовой стрелки, а initSense<0 – по часовой стрелке).
+    MbCartPoint arcCenter( 50, 40 );
+    const double RADIUS = 20;
+    MbArc* pArc = new MbArc( arcCenter, RADIUS, arrPnts[7], arrPnts[0], 1 /*initSense*/);
+    // Контур из двух сегментов
+    MbContour* pContour= new MbContour( *pPolyline, true );
+    pContour->AddSegment( pArc );
+    // Отображение контура
+    if (pContour )
+        show( Style( 1, RGB(0,0,255) ), pContour, &pl );
+    // Вызовы информационных методов контура
+    size_t segmentsCount = pContour->GetSegmentsCount(); // 2
+    double tMin = pContour->GetTMin(); // 0.0
+    double tMax = pContour->GetTMax(); // 10.14159
+    // Параметр IsSmoothConnected - допуск для классификации угловых точек на контуре
+    bool isSmooth = pContour->IsSmoothConnected(0.001); // false
+    double length = pContour->CalculateLength( tMin, tMax ); // 302.83
+    bool isClosed = pContour->IsClosedContinuousC0(); // true
+    bool isCurvilinear = pContour->IsAnyCurvilinear(); // true
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pPolyline );
+    ::DeleteItem( pArc );
+    ::DeleteItem( pContour );
+    return true;
+}
+[end]
+[id = "code_block_2"]
+[begin]
+#include "setup.h"
+
+// Заголовочные файлы, дополнительные к примеру 2.1
+#include "surf_plane.h" // MbPlane - плоскость
+#include "cur_contour_on_plane.h" // MbContourOnPlane - Контур на плоскости
+// (кривая в трехмерном пространстве)
+#include "action_surface.h" // Функции- алгоритмы построения поверхностей
+#include "cur_contour.h" // MbContour - контур в двумерном пространстве
+#include "cur_polyline.h" // MbPolyline - Ломаная линия
+#include "cur_arc.h" // MbArc - Эллиптическая дуга
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Вершины ломаной
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add( MbCartPoint(30, 40) );
+    arrPnts.Add( MbCartPoint(30, 20 ) );
+    arrPnts.Add( MbCartPoint(0, 20) );
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(100, 0) );
+    arrPnts.Add( MbCartPoint(100, 20) );
+    arrPnts.Add( MbCartPoint(70, 20) );
+    arrPnts.Add( MbCartPoint(70, 40) );
+    // Ломаная линия с вершинами arrPnts
+    MbPolyline* pPolyline = new MbPolyline( arrPnts, false /* Флаг незамкнутой линии */);
+    // Дуга окружности для замыкания ломаной.
+    // При построении указывается центр, радиус, начальная и конечная точки и
+    // направление обхода дуги между этими точками (значение initSense>0 соответствует
+    // обходу против часовой стрелки, а initSense<0 – по часовой стрелке).
+    MbCartPoint arcCenter( 50, 40 );
+    const double RADIUS = 20;
+    MbArc* pArc = new MbArc( arcCenter, RADIUS, arrPnts[7], arrPnts[0], 1 /*initSense*/);
+    // Контур из двух сегментов
+    MbContour* pContour= new MbContour( *pPolyline, true );
+    pContour->AddSegment( pArc );
+
+    // Вызовы информационных методов контура
+    size_t segmentsCount = pContour->GetSegmentsCount(); // 2
+    double tMin = pContour->GetTMin(); // 0.0
+    double tMax = pContour->GetTMax(); // 10.14159
+    // Параметр IsSmoothConnected - допуск для классификации угловых точек на контуре
+    bool isSmooth = pContour->IsSmoothConnected(0.001); // false
+    double length = pContour->CalculateLength( tMin, tMax ); // 302.83
+    bool isClosed = pContour->IsClosedContinuousC0(); // true
+    bool isCurvilinear = pContour->IsAnyCurvilinear(); // true
+    // ПОСТРОЕНИЕ ПОВЕРХНОСТИ ВЫДАВЛИВАНИЯ
+    // Контур-образующую разместим в плоскости ZY глобальной системы координат.
+    // Эта плоскость представляется в виде объекта MbPlane и строится по точке-началу
+    // координат и двум векторам, задающим оси локальной системы координат
+    // плоскости – в данном случае это оси Z и Y глобальной СК.
+    MbPlane* pPlaneZY = new MbPlane( MbCartPoint3D(0,0,0), MbVector3D(0,0,1),
+    MbVector3D(0,1,0) );
+    // Трехмерная кривая "контур на плоскости", которая будет использоваться в качестве
+    // образующей для операции выдавливания
+    MbContourOnPlane* pc = new MbContourOnPlane( *pPlaneZY, *pContour, true );
+    // Вектор, задающий направление и величину выдавливания (на 15 единиц в
+    // отрицательном направлении оси X глобальной СК)
+    MbVector3D dir( -15, 0, 0 );
+    // Вызов функции для построения поверхности выдавливания
+    MbSurface* pSurf = NULL;
+    MbResultType res = ::ExtrusionSurface(
+    *pc, dir, true /* разрешение на упрощение поверхности */, pSurf );
+    // Отображение построенной поверхности
+    if ( res == rt_Success )
+        show( Style(1, LIGHTGRAY), pSurf );
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pPlaneZY );
+    ::DeleteItem( pc );
+    ::DeleteItem( pSurf );
+    ::DeleteItem( pPolyline );
+    ::DeleteItem( pArc );
+    ::DeleteItem( pContour );
+    return true;
+}
+[end]
+[id = "code_block_3"]
+[begin]
+#include "setup.h"
+
+// Заголовочные файлы, дополнительные к примеру 2.1
+#include "solid.h" // MbSolid - твердое тело
+#include "creator.h" // Классы для построения геометрических моделей
+#include "action_solid.h" // Функции-алгоритмы построения твердых тел
+#include "cur_contour.h" // MbContour - контур в двумерном пространстве
+#include "cur_polyline.h" // MbPolyline - Ломаная линия
+#include "cur_arc.h" // MbArc - Эллиптическая дуга
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Вершины ломаной
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add( MbCartPoint(30, 40) );
+    arrPnts.Add( MbCartPoint(30, 20 ) );
+    arrPnts.Add( MbCartPoint(0, 20) );
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(100, 0) );
+    arrPnts.Add( MbCartPoint(100, 20) );
+    arrPnts.Add( MbCartPoint(70, 20) );
+    arrPnts.Add( MbCartPoint(70, 40) );
+    // Ломаная линия с вершинами arrPnts
+    MbPolyline* pPolyline = new MbPolyline( arrPnts, false /* Флаг незамкнутой линии */);
+    // Дуга окружности для замыкания ломаной.
+    // При построении указывается центр, радиус, начальная и конечная точки и
+    // направление обхода дуги между этими точками (значение initSense>0 соответствует
+    // обходу против часовой стрелки, а initSense<0 – по часовой стрелке).
+    MbCartPoint arcCenter( 50, 40 );
+    const double RADIUS = 20;
+    MbArc* pArc = new MbArc( arcCenter, RADIUS, arrPnts[7], arrPnts[0], 1 /*initSense*/);
+    // Контур из двух сегментов
+    MbContour* pContour= new MbContour( *pPolyline, true );
+    pContour->AddSegment( pArc );
+    // Вызовы информационных методов контура
+    size_t segmentsCount = pContour->GetSegmentsCount(); // 2
+    double tMin = pContour->GetTMin(); // 0.0
+    double tMax = pContour->GetTMax(); // 10.14159
+    // Параметр IsSmoothConnected - допуск для классификации угловых точек на контуре
+    bool isSmooth = pContour->IsSmoothConnected(0.001); // false
+    double length = pContour->CalculateLength( tMin, tMax ); // 302.83
+    bool isClosed = pContour->IsClosedContinuousC0(); // true
+    bool isCurvilinear = pContour->IsAnyCurvilinear(); // true
+    // ПОСТРОЕНИЕ ТЕЛА ВЫДАВЛИВАНИЯ
+    // Локальная СК в трехмерном пространстве, у которой ось X совпадает с
+    // осью Z глобальной СК. Строится по двум осям X и Y и началу координат.
+    MbPlacement3D plZY( MbVector3D(0,0,1), MbVector3D(0,1,0), MbCartPoint3D(0,0,0) );
+    // Объект, хранящий параметры образующей (контур и локальная СК).
+    // Контур размещается на плоскость XY локальной СК plZY.
+    MbSweptData sweptData( plZY, *pContour );
+    // Направляющий вектор для операции выдавливания
+    MbVector3D dirV( -1, 0, 0 );
+    // Параметры операции выдавливания, задающие свойства тела для построения -
+    // расстояние выдавливания в прямом и в обратном направлении вдоль
+    // направляющего вектора
+    const double HEIGHT_FORWARD = 10.0, HEIGHT_BACKWARD = 0.0;
+    ExtrusionValues extrusionParam( HEIGHT_FORWARD, HEIGHT_BACKWARD );
+    // Служебный объект для именования элементов модели твердого тела
+    MbSNameMaker operNames( ct_CurveExtrusionSolid, MbSNameMaker::i_SideNone, 0 );
+    PArray<MbSNameMaker> cNames( 0, 1, false );
+    // Построение твердого тела выдавливания
+    MbSolid* pSolid = NULL;
+    MbResultType resCode = ::ExtrusionSolid( sweptData, dirV, NULL, NULL, false,
+    extrusionParam, operNames, cNames, pSolid);
+    // Отображение построенного тела
+    if ( resCode == rt_Success )
+        show( Style(1, LIGHTGRAY), pSolid );
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pPolyline );
+    ::DeleteItem( pArc );
+    ::DeleteItem( pContour );
+    ::DeleteItem( pSolid );
+    return true;
+}
+[end]
+[id = "code_block_4"]
+[begin]
+#include "setup.h"
+
+#include "cur_polyline.h" // MbPolyline - ломаная линия
+#include "cur_contour.h" // MbContour - контур
+#include "alg_curve_fillet.h" // Функции для построения скруглений и фасок
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // Ломаная линия, изображающая квадрат.
+    // Вершины перечисляются по часовой стрелке, начиная с левого нижнего угла.
+    const double SQUARE_SIDE = 50;
+    SArray<MbCartPoint> arrPnts(4);
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(0, SQUARE_SIDE) );
+    arrPnts.Add( MbCartPoint(SQUARE_SIDE, SQUARE_SIDE) );
+    arrPnts.Add( MbCartPoint(SQUARE_SIDE, 0 ) );
+    MbPolyline* pSquare = new MbPolyline( arrPnts, true /* Флаг замкнутой линии */);
+    // Построение нового контура со скруглениями на основе ломаной-квадрата.
+    // В качестве входных параметров указывается радиус скругления,
+    // флаг построения только в одной вершине, и точка, задающая вершину для скругления.
+    // Функция возвращает новую кривую-контур со скруглением в виде
+    // выходного параметра pFillets.
+    MbContour* pFillets = NULL;
+    ::FilletPolyContour(pSquare, 5, false, arrPnts[1], pFillets );
+    // Построение еще трех скруглений с помощью методов MbContour.
+    // Указывается индекс первого из скругляемых сегментов и
+    // радиус скругления. При указании индексов учитывается, что
+    // каждое скругление добавляет один сегмент в контур.
+    // После вызова метода для построения скругления значения индексов
+    // изменяются и соответствуют построенным сегментам-дугам.
+    ptrdiff_t idxSideTop = 2; // Индекс верхней стороны квадрата
+    ptrdiff_t idxSideRight = 4; // Индекс правой стороны
+    ptrdiff_t idxSideBottom = 6; // Индекс нижней стороны
+    pFillets->FilletTwoSegments( idxSideTop, 10 /* радиус скругления */ );
+    pFillets->FilletTwoSegments( idxSideRight, 15 );
+    pFillets->FilletTwoSegments( idxSideBottom, 20 );
+    // Сдвиг контура по горизонтали, чтобы он не накладывался на исходный квадрат
+    pFillets->Move( MbVector( SQUARE_SIDE*3/2, 0 ) );
+    // Создание копии ломаной-квадрата для построения ломаной с фасками
+    MbPolyline* pChamfers = new MbPolyline( *pSquare );
+    // Сдвиг ломаной, чтобы она не накладывалась на уже построенные кривые.
+    pChamfers->Move( MbVector( 2 * SQUARE_SIDE*3/2, 0 ) );
+    // Длины фасок (начиная с левого нижнего угла квадрата)
+    const double arrLen[] = { 20, 5, 10, 15 };
+    // Построение фасок в углах ломаной, начиная с левого нижнего угла
+    const double DEG_TO_RAD = M_PI/180.0;
+    for (int i = 0; i < 4; i++)
+    {
+        // Индекс очередной вершины, в которой строится фаска. Множитель 2 нужен для
+        // учета того, что каждая фаска добавляет один сегмент к ломаной.
+        int idxPnt = i*2;
+        // Координаты очередной вершины квадрата.
+        MbCartPoint pntVert;
+        pChamfers->GetPoint( idxPnt, pntVert );
+        // Функция построения фаски модифицирует исходную кривую посредством
+        // добавления отрезка длиной arrLen[i] с направлением 45 градусов.
+        ::ChamferPolyContour(pChamfers, arrLen[i], 45*DEG_TO_RAD, true, false, pntVert );
+    }
+    // Отображение ломаных и контура
+    if ( pSquare )
+        show( Style( 1, RGB(0,0,255) ), pSquare, &pl );
+    if ( pFillets )
+        show( Style( 1, RGB(0,0,255) ), pFillets, &pl );
+    if ( pChamfers )
+        show( Style( 1, RGB(0,0,255) ), pChamfers, &pl );
+    // Пример запроса количества сегментов у построенных кривых
+    int segCount_Square = pSquare->GetSegmentsCount(); // 4
+    int segCount_Fillets = pFillets->GetSegmentsCount(); // 8
+    int segCount_Chamfers = pChamfers->GetSegmentsCount(); // 8
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSquare );
+    ::DeleteItem( pFillets );
+    ::DeleteItem( pChamfers );
+    return true;
+}
+[end]
+[id = "code_block_5"]
+[begin]
+#include "setup.h"
+
+#include "cur_contour.h" // MbContour - контур
+#include "cur_arc.h" // MbArc - дуга эллипса/окружности
+#include "cur_line.h" // MbLine - прямая в двумерном пространстве
+#include "cur_line_segment.h" // MbLineSegment - класс двумерного отрезка
+#include "mb_cross_point.h" // MbCrossPoint - точка пересечения пары кривых
+#include "surf_plane.h" // MbPlane - плоскость
+#include "solid.h" // MbSolid - твердое тело
+#include "creator.h" // Классы для построения геометрических моделей
+#include "alg_curve_fillet.h" // Функции для построения скруглений и фасок
+#include "action_point.h" // Функции-алгоритмы для операций с точками
+#include "action_solid.h" // Функции- алгоритмы построения твердых тел
+
+// ФУНКЦИЯ ПОСТРОЕНИЯ КРИВЫХ ДЛЯ ОБРАЗУЮЩЕЙ ТЕЛА ВЫДАВЛИВАНИЯ.
+// Три кривые возвращаются в массиве в виде указателей на контуры.
+void CreateSketch( RPArray<MbContour>& _arrContours )
+{
+    // Центры и радиусы окружностей, дуги которых входят в контур
+    const MbCartPoint centerCircleLeft( 0, 0 );
+    const MbCartPoint centerCircleRight( 100, 0 );
+    const double RAD_LEFT = 25;
+    const double RAD_RIGHT = 15;
+    // Вспомогательные горизонтальные прямые, содержащие отрезки контура
+    // Значения горизонтальных координат могут быть любыми.
+    MbLine* pLineTop = new MbLine(MbCartPoint( 0, 7.5), MbCartPoint( 10, 7.5 ) );
+    MbLine* pLineBtm = new MbLine(MbCartPoint( 0, -7.5), MbCartPoint( 10, -7.5 ) );
+    // Вычисление точек пересечения вспомогательных прямых с окружностями (рис.6)
+    MbCrossPoint pntsEA[2]; // Пересечения верхней прямой и левой окружности
+    MbCrossPoint pntsDG[2]; // Верхняя прямая и правая окружность
+    MbCrossPoint pntsFB[2]; // Нижняя прямая и левая окружность
+    MbCrossPoint pntsCH[2]; // Нижняя прямая и правая окружность
+    ::LineCircle( *pLineTop, centerCircleLeft, RAD_LEFT, pntsEA );
+    ::LineCircle( *pLineTop, centerCircleRight, RAD_RIGHT, pntsDG );
+    ::LineCircle( *pLineBtm, centerCircleLeft, RAD_LEFT, pntsFB );
+    ::LineCircle( *pLineBtm, centerCircleRight, RAD_RIGHT, pntsCH );
+    // Упорядочение точек пересечения по горизонтали, чтобы было pnts[0].x < pnts[1].x
+    if (pntsEA[0].p.x > pntsEA[1].p.x )
+        std::swap(pntsEA[0], pntsEA[1] );
+    if (pntsDG[0].p.x > pntsDG[1].p.x )
+        std::swap(pntsDG[0], pntsDG[1] );
+    if (pntsFB[0].p.x > pntsFB[1].p.x )
+        std::swap(pntsFB[0], pntsFB[1] );
+    if (pntsCH[0].p.x > pntsCH[1].p.x )
+        std::swap(pntsCH[0], pntsCH[1] );
+    // Дуги окружностей для контура
+    MbArc* pArcAB = new MbArc(centerCircleLeft, RAD_LEFT, pntsEA[1].p, pntsFB[1].p, 1);
+    MbArc* pArcCD = new MbArc(centerCircleRight, RAD_RIGHT, pntsCH[0].p, pntsDG[0].p, 1);
+    // Отрезки для контура
+    MbLineSegment* pSegBC = new MbLineSegment(pntsFB[1].p, pntsCH[0].p);
+    MbLineSegment* pSegDA = new MbLineSegment(pntsDG[0].p, pntsEA[1].p );
+    // Построение контура
+    MbContour* pContour = new MbContour();
+    pContour->AddSegment( pArcAB );
+    pContour->AddSegment( pSegBC );
+    pContour->AddSegment( pArcCD );
+    pContour->AddSegment( pSegDA );
+    // Построение скруглений во всех узлах контура (содержит четыре узла)
+    pContour->Fillet( 10 );
+    // Построение внутренних окружностей образующей и преобразование их в контуры
+    const double INNER_RAD_LEFT = 12.5;
+    const double INNER_RAD_RIGHT = 7.5;
+    MbArc* pCircleLeft = new MbArc(centerCircleLeft, INNER_RAD_LEFT);
+    MbArc* pCircleRight = new MbArc(centerCircleRight, INNER_RAD_RIGHT);
+    MbContour* pContourCircleLeft = new MbContour( *pCircleLeft, true );
+    MbContour* pContourCircleRight = new MbContour( *pCircleRight, true );
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pLineTop );
+    ::DeleteItem( pLineBtm );
+    ::DeleteItem( pArcAB );
+    ::DeleteItem( pArcCD );
+    ::DeleteItem( pSegBC );
+    ::DeleteItem( pSegDA );
+    // Сохранение указателей на возвращаемые контуры в выходном массиве
+    // У возвращаемых объектов счетчик ссылок уменьшать не надо - это должно быть
+    // сделано в месте вызова, после того, как эти объекты больше не будут нужны.
+    _arrContours.push_back( pContour );
+    _arrContours.push_back( pContourCircleLeft );
+    _arrContours.push_back( pContourCircleRight );
+}
+
+using namespace c3d;
+
+bool run()
+{
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    // СОЗДАНИЕ КОНТУРОВ ДЛЯ ОБРАЗУЮЩЕЙ
+    RPArray<MbContour> arrContours;
+    CreateSketch( arrContours );
+    // Отображение образующей (в плоскости XY глобальной СК)
+    for (int i = 0; i < arrContours.size(); i++)
+        show( Style( 1, RGB(0,0,255) ), arrContours[i], &pl );
+    // ПОСТРОЕНИЕ ТЕЛА ВЫДАВЛИВАНИЯ
+    // Образующая размещается на плоскости XY глобальной СК.
+    // Важное замечание: объект-плоскость должен создаваться динамически,
+    // поскольку он продолжает использоваться в объекте-твердом теле после
+    // выхода из данной функции.
+    MbPlane* pPlaneXY = new MbPlane( MbCartPoint3D(0,0,0), MbCartPoint3D(1,0,0),
+    MbCartPoint3D(0,1,0) );
+    // Объект, хранящий параметры образующей
+    MbSweptData sweptData( *pPlaneXY, arrContours );
+    // Направляющий вектор для операции выдавливания
+    MbVector3D dir( 0, 0, -1 );
+    // Параметры операции выдавливания, задающие свойства тела для построения:
+    // расстояние выдавливания в прямом и в обратном направлении вдоль
+    // направляющего вектора
+    const double HEIGHT_FORWARD = 10.0, HEIGHT_BACKWARD = 0.0;
+    ExtrusionValues extrusionParam( HEIGHT_FORWARD, HEIGHT_BACKWARD );
+    // Служебный объект для именования элементов модели твердого тела
+    MbSNameMaker operNames( ct_CurveExtrusionSolid, MbSNameMaker::i_SideNone, 0 );
+    PArray<MbSNameMaker> cNames( 0, 1, false );
+    // Построение твердого тела выдавливания
+    MbSolid* pSolid = NULL;
+    MbResultType res = ::ExtrusionSolid( sweptData, dir, NULL, NULL, false,
+    extrusionParam, operNames, cNames, pSolid);
+    // Отображение построенного тела
+    if (res == rt_Success)
+    {
+        // Смещение тела по оси Y, чтобы при отображении оно не накладывалось на образующую
+        pSolid->Move(MbVector3D(0,80,0));
+        show( Style(1, LIGHTGRAY), pSolid );
+    }
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSolid );
+    ::DeleteItem( pPlaneXY );
+    for (int i = 0; i<arrContours.size(); i++)
+        ::DeleteItem( arrContours[i] );
+
+    return true;
+}
+[end]
+[id = "code_block_6"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+#include "cur_polyline.h" // MbPolyline - Ломаная линия
+#include "cur_cubic_spline.h" // MbCubicSpline - кубический сплайн в 2D
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки сплайна
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(-7, 20) );
+    arrPnts.Add( MbCartPoint(8.5, 30) );
+    arrPnts.Add( MbCartPoint(33, 31) );
+    arrPnts.Add( MbCartPoint(30.5,25.5) );
+    arrPnts.Add( MbCartPoint(45, 9.5) );
+    arrPnts.Add( MbCartPoint(50.5, 15) );
+    arrPnts.Add( MbCartPoint(72.5, 2) );
+    // Построение незамкнутого кубического сплайна по контрольным точкам
+    MbCubicSpline* pSpline = MbCubicSpline::Create( arrPnts, false );
+    // Построение ломаной линии по контрольным точкам сплайна
+    MbPolyline* pPolyline = new MbPolyline( arrPnts, false );
+    // Отображение контрольных точек
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение ломаной
+    show( Style(2, RGB(0,255,0)), pPolyline, &pl );
+    // Отображение сплайна
+    show( Style(3, RGB(0,0,255)), pSpline, &pl );
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSpline );
+    ::DeleteItem( pPolyline );
+    return true;
+}
+[end]
+[id = "code_block_7"]
+[begin]
+#include "setup.h"
+
+#include "cur_line_segment.h" // MbLineSegment - класс двумерного отрезка
+#include "cur_cubic_spline.h" // MbCubicSpline - кубический сплайн в 2D
+#include "cur_contour.h" // MbContour - контур
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки сплайна
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(-7, 20) );
+    arrPnts.Add( MbCartPoint(8.5, 30) );
+    arrPnts.Add( MbCartPoint(33, 31) );
+    arrPnts.Add( MbCartPoint(30.5, 25.5) );
+    arrPnts.Add( MbCartPoint(45, 9.5) );
+    arrPnts.Add( MbCartPoint(50.5, 15) );
+    arrPnts.Add( MbCartPoint(72.5, 2) );
+    // Построение незамкнутого кубического сплайна по контрольным точкам
+    MbCubicSpline* pSpline = MbCubicSpline::Create( arrPnts, false );
+    // Два отрезка, соединяющихся со сплайном в концевых точках
+    MbLineSegment* pSeg1 = new MbLineSegment(MbCartPoint(0, -50), MbCartPoint(0, 0));
+    MbLineSegment* pSeg2 = new MbLineSegment(MbCartPoint(72.5,2), MbCartPoint(130,-45));
+    // Построение контура из отрезков и сплайна
+    MbContour* pContour = new MbContour();
+    pContour->AddSegment( pSeg1 );
+    pContour->AddSegment( pSpline );
+    pContour->AddSegment( pSeg2 );
+    // Скругление в угловых точках контура
+    const int FILLET_RAD = 10;
+    ptrdiff_t idxSegLeft = 0;
+    pContour->FilletTwoSegments( idxSegLeft, FILLET_RAD );
+    ptrdiff_t idxSegRight = pContour->GetSegmentsCount()-2;
+    pContour->FilletTwoSegments( idxSegRight, FILLET_RAD );
+    // Отображение контрольных точек
+    MbPlacement3D pl; // Локальная СК (по умолчанию совпадает с мировой СК)
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение контура
+    show( Style(3, RGB(0,0,255)), pContour, &pl );
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSpline );
+    ::DeleteItem( pSeg1 );
+    ::DeleteItem( pSeg2 );
+    ::DeleteItem( pContour );
+    return true;
+}
+[end]
+[id = "code_block_8"]
+[begin]
+#include "setup.h"
+
+#include "cur_line_segment.h" // MbLineSegment - отрезок
+#include "cur_hermit.h" // MbHermit - кубический сплайн Эрмита
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки сплайна
+    SArray<MbCartPoint> arrPnts(8);
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(-7, 20) );
+    arrPnts.Add( MbCartPoint(8.5, 30) );
+    arrPnts.Add( MbCartPoint(33, 31) );
+    arrPnts.Add( MbCartPoint(30.5, 25.5) );
+    arrPnts.Add( MbCartPoint(45, 9.5) );
+    arrPnts.Add( MbCartPoint(50.5, 15) );
+    arrPnts.Add( MbCartPoint(72.5, 2) );
+    // Построение незамкнутого кубического сплайна Эрмита
+    MbHermit* pSpline = MbHermit::Create( arrPnts, false );
+    // Два отрезка, соединяющихся со сплайном в концевых точках
+    // pSeg1 - вертикальный отрезок
+    // pSeg2 - отрезок под углом -45 градусов к горизонтальной оси
+    MbLineSegment* pSeg1 = new MbLineSegment(MbCartPoint(0, -50), arrPnts[0]);
+    MbLineSegment* pSeg2 = new MbLineSegment(arrPnts[7], MbVector(1, -1), 0, 50 );
+    // Модификация контрольных точек сплайна: положение не изменяется
+    // (указываются координаты существующих концевых точек сплайна),
+    // но задаются новые значения производных.
+    const double TH = 0.01; // Допуск по расстоянию, в пределах которого
+    // точки считаются совпадающими
+    pSpline->InsertPoint( 0.0, arrPnts[0], MbVector(0, -1), TH, TH );
+    pSpline->InsertPoint( 7.0, arrPnts[7], MbVector(1, -1), TH, TH );
+    // Отображение контрольных точек
+    MbPlacement3D pl;
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение сплайна
+    show( Style(3, RGB(0,0,255)), pSpline, &pl );
+    // Отображение отрезков
+    show( Style(3, RGB(0,255,0)), pSeg1, &pl );
+    show( Style(3, RGB(0,255,0)), pSeg2, &pl );
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSpline );
+    ::DeleteItem( pSeg1 );
+    ::DeleteItem( pSeg2 );
+    return true;
+}
+[end]
+[id = "code_block_9"]
+[begin]
+#include "setup.h"
+
+#include "cur_line_segment.h" // MbLineSegment - отрезок
+#include "cur_hermit.h" // MbHermit - кубический сплайн Эрмита
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки сплайна (соответствуют координатам пикселей на
+    // спутниковом снимке). Две точки в начале и одна в конце массива попадают на
+    // отрезки, для сопряжения которых строится сплайн.
+    std::vector<MbCartPoint> stdArrPnts = { {-106, -12}, {-67, -17}, { 0, 0 }, { 178, 95 },
+    { 404, 123}, {722, 235}, {1067, 299}, {1130, 285} };
+    SArray<MbCartPoint> arrPnts( stdArrPnts );
+    // Построение незамкнутого кубического сплайна Эрмита
+    MbHermit* pSpline = MbHermit::Create( arrPnts, false );
+    // Два отрезка, изображающие прямолинейные участки дороги.
+    // Координаты концевых точек, как и контрольных точек сплайна,
+    // получены измерением координат пикселей на исходном изображении.
+    MbLineSegment* pSeg1 = new MbLineSegment(MbCartPoint(-296, 8),
+    MbCartPoint(-67, -17));
+    MbLineSegment* pSeg2 = new MbLineSegment(MbCartPoint(1081, 296),
+    MbCartPoint(1242, 259));
+    // Вектора, параллельные отрезкам pSeg1 и pSeg2
+    MbDirection dir1 = pSeg1->GetDirection();
+    MbDirection dir2 = pSeg2->GetDirection();
+    // Расчет производных в концевых точках сплайна: направлены параллельно отрезкам,
+    // величина задана для "притяжения" сегмента сплайна к отрезку.
+    MbVector vect1( dir1.ax, dir1.ay );
+    MbVector vect2( dir2.ax, dir2.ay );
+    vect1 *= 10;
+    vect2 *= 10;
+    // Модификация производных в концевых контрольных точках сплайна
+    const double TH = 0.01; // Допуск по расстоянию, в пределах которого
+    // точки считаются совпадающими
+    pSpline->InsertPoint( 0.0, arrPnts[0], vect1, TH, TH );
+    pSpline->InsertPoint( 7.0, arrPnts[7], vect2, TH, TH );
+    // Отображение контрольных точек
+    MbPlacement3D pl;
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение сплайна
+    show( Style(3, RGB(0,0,255)), pSpline, &pl );
+    // Отображение отрезков
+    show( Style(3, RGB(0,255,0)), pSeg1, &pl );
+    show( Style(3, RGB(0,255,0)), pSeg2, &pl );
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSpline );
+    ::DeleteItem( pSeg1 );
+    ::DeleteItem( pSeg2 );
+    return true;
+}
+[end]
+[id = "code_block_10"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+#include "cur_bezier.h" // MbBezier - кубическая кривая Безье
+#include "cur_line_segment.h" // MbLineSegment - отрезок
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки
+    SArray<MbCartPoint> arrPnts(4);
+
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(0,30) );
+    arrPnts.Add( MbCartPoint(100, 30) );
+    arrPnts.Add( MbCartPoint(100, 0) );
+
+    // Построение незамкнутого кубического сплайна Безье
+    // Используется конструктор для построения по четырем контрольным точкам
+    MbBezier* pSpline =  MbBezier::Create( arrPnts );
+    // Отображение контрольных точек
+    MbPlacement3D pl;
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение сплайна
+    show( Style(3, RGB(0,0,255)), pSpline, &pl );
+    // Отображение контрольной ломаной сплайна
+    for (int i = 0; i < arrPnts.size()-1; i++)
+    {
+        MbLineSegment* pSeg = new MbLineSegment(arrPnts[i], arrPnts[i+1]);
+        show( Style(1, RGB(0,255,0)), pSeg, &pl );
+        ::DeleteItem( pSeg );
+    }
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSpline );
+    
+    return true;
+}
+[end]
+[id = "code_block_11"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+#include "cur_bezier.h" // MbBezier - кубическая кривая Безье
+#include "cur_line_segment.h" // MbLineSegment - отрезок
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки
+    SArray<MbCartPoint> arrPnts(4);
+
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(20, 30) );
+    arrPnts.Add( MbCartPoint(80, 30) );
+    arrPnts.Add( MbCartPoint(100, 0) );
+
+    // Построение незамкнутого кубического сплайна Безье
+    // Используется конструктор для построения по четырем контрольным точкам
+    MbBezier* pSpline =  MbBezier::Create( arrPnts );
+    // Отображение контрольных точек
+    MbPlacement3D pl;
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение сплайна
+    show( Style(3, RGB(0,0,255)), pSpline, &pl );
+    // Отображение контрольной ломаной сплайна
+    for (int i = 0; i < arrPnts.size()-1; i++)
+    {
+        MbLineSegment* pSeg = new MbLineSegment(arrPnts[i], arrPnts[i+1]);
+        show( Style(1, RGB(0,255,0)), pSeg, &pl );
+        ::DeleteItem( pSeg );
+    }
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSpline );
+    
+    return true;
+}
+[end]
+[id = "code_block_12"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+#include "cur_bezier.h" // MbBezier - кубическая кривая Безье
+#include "cur_line_segment.h" // MbLineSegment - отрезок
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки
+    SArray<MbCartPoint> arrPnts(4);
+
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(40, 30) );
+    arrPnts.Add( MbCartPoint(60, 30) );
+    arrPnts.Add( MbCartPoint(100, 0) );
+
+    // Построение незамкнутого кубического сплайна Безье
+    // Используется конструктор для построения по четырем контрольным точкам
+    MbBezier* pSpline =  MbBezier::Create( arrPnts );
+    // Отображение контрольных точек
+    MbPlacement3D pl;
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение сплайна
+    show( Style(3, RGB(0,0,255)), pSpline, &pl );
+    // Отображение контрольной ломаной сплайна
+    for (int i = 0; i < arrPnts.size()-1; i++)
+    {
+        MbLineSegment* pSeg = new MbLineSegment(arrPnts[i], arrPnts[i+1]);
+        show( Style(1, RGB(0,255,0)), pSeg, &pl );
+        ::DeleteItem( pSeg );
+    }
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSpline );
+    
+    return true;
+}
+[end]
+[id = "code_block_13"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+#include "cur_bezier.h" // MbBezier - кубическая кривая Безье
+#include "cur_line_segment.h" // MbLineSegment - отрезок
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки
+    SArray<MbCartPoint> arrPnts(4);
+
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(40, 30) );
+    arrPnts.Add( MbCartPoint(70, -30) );
+    arrPnts.Add( MbCartPoint(100, 0) );
+
+    // Построение незамкнутого кубического сплайна Безье
+    // Используется конструктор для построения по четырем контрольным точкам
+    MbBezier* pSpline =  MbBezier::Create( arrPnts );
+    // Отображение контрольных точек
+    MbPlacement3D pl;
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение сплайна
+    show( Style(3, RGB(0,0,255)), pSpline, &pl );
+    // Отображение контрольной ломаной сплайна
+    for (int i = 0; i < arrPnts.size()-1; i++)
+    {
+        MbLineSegment* pSeg = new MbLineSegment(arrPnts[i], arrPnts[i+1]);
+        show( Style(1, RGB(0,255,0)), pSeg, &pl );
+        ::DeleteItem( pSeg );
+    }
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSpline );
+    
+    return true;
+}
+[end]
+[id = "code_block_14"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+#include "cur_bezier.h" // MbBezier - кубическая кривая Безье
+#include "cur_line_segment.h" // MbLineSegment – отрезок
+
+using namespace c3d;
+
+bool run()
+{
+    // Точки-полюса для составной кубической кривой Безье
+    SArray<MbCartPoint> arrPoles(8);
+    arrPoles.Add( MbCartPoint(0, 0) );
+    arrPoles.Add( MbCartPoint(-7, 20) );
+    arrPoles.Add( MbCartPoint(8.5, 30) );
+    arrPoles.Add( MbCartPoint(33, 31) );
+    arrPoles.Add( MbCartPoint(30.5, 25.5) );
+    arrPoles.Add( MbCartPoint(45, 9.5) );
+    arrPoles.Add( MbCartPoint(50.5, 15) );
+    arrPoles.Add( MbCartPoint(72.5, 2) );
+    // Построение незамкнутого кубического сплайна Безье по полюсам
+    MbBezier* pSpline = MbBezier::Create( arrPoles, false );
+    // (*) - в этом месте пример будет дополнен для сопряжения сплайна с отрезками
+    // Получение массива вычисленных контрольных точек сплайна.
+    // У составной кривой Безье в C3D есть особенность реализации – первые и
+    // последние пары точек в массиве контрольных точек совпадают.
+    // Они могут использоваться для сопряжения этой кривой с другими кривыми.
+    SArray<MbCartPoint> arrPnts;
+    pSpline->GetPointList( arrPnts );
+    // Отображение сплайна (синим цветом)
+    MbPlacement3D pl;
+    show( Style(4, RGB(0,0,255)), pSpline, &pl );
+    // Отображение полюсов (красный цвет)
+    for (int i = 0; i<arrPoles.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPoles[i], &pl );
+    // Отображение контрольных точек сплайна (пурпурный цвет)
+    for (int i = 0; i < arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,255)), arrPnts[i], &pl );
+    // Отображение контрольной ломаной сплайна (зеленый цвет)
+    for (int i = 0; i < arrPnts.size()-1; i++)
+    {
+        MbLineSegment* pSeg = new MbLineSegment(arrPnts[i], arrPnts[i+1]);
+        show( Style(3, RGB(0,255,0)), pSeg, &pl );
+        ::DeleteItem( pSeg );
+    }
+    ::DeleteItem( pSpline );
+    
+    return true;
+}
+[end]
+[id = "code_block_15"]
+[begin]
+#include "setup.h"
+
+#include "mb_placement3d.h"
+#include "cur_bezier.h" // MbBezier - кубическая кривая Безье
+#include "cur_line_segment.h" // MbLineSegment – отрезок
+
+using namespace c3d;
+
+bool run()
+{
+     // Точки-полюса для составной кубической кривой Безье
+    SArray<MbCartPoint> arrPoles(8);
+    arrPoles.Add( MbCartPoint(0, 0) );
+    arrPoles.Add( MbCartPoint(-7, 20) );
+    arrPoles.Add( MbCartPoint(8.5, 30) );
+    arrPoles.Add( MbCartPoint(33, 31) );
+    arrPoles.Add( MbCartPoint(30.5, 25.5) );
+    arrPoles.Add( MbCartPoint(45, 9.5) );
+    arrPoles.Add( MbCartPoint(50.5, 15) );
+    arrPoles.Add( MbCartPoint(72.5, 2) );
+    // Построение незамкнутого кубического сплайна Безье по полюсам
+    MbBezier* pSpline = MbBezier::Create( arrPoles, false );
+
+    // Два отрезка, соединяющихся со сплайном в концевых точках
+    // pSeg1 - вертикальный отрезок
+    // pSeg2 - отрезок под углом -45 градусов к горизонтальной оси
+    MbLineSegment* pSeg1 = new MbLineSegment(arrPoles[0], MbCartPoint(0, -50));
+    MbLineSegment* pSeg2 = new MbLineSegment(arrPoles[7], MbVector(1, -1), 0, 50 );
+    // Метод MbBezier::ChangePoint позволяет явно задать положение контрольной точки
+    // по ее индексу (начиная с 0).
+    // Первая вершина отрезка pSeg1 совпадает с концевой точкой сплайна и с первой парой
+    // контрольных точек (с индексами 0 и 1). Совместим контрольную точку с индексом 0
+    // со второй вершиной отрезка pSeg1 так, чтобы касательный вектор в концевой точке
+    // сплайна был направлен параллельно этому отрезку.
+    MbCartPoint seg1p2;
+    pSeg1->GetPoint2(seg1p2);
+    pSpline->ChangePoint( 0, seg1p2 );
+    // Произведем аналогичное построение для последней контрольной точки –
+    // поместим ее во вторую вершину отрезка pSeg2, тогда касательный вектор в
+    // концевой точке сплайна будет направлен параллельно этому отрезку.
+    MbCartPoint seg2p2;
+    pSeg2->GetPoint2(seg2p2);
+    pSpline->ChangePoint( pSpline->GetPointListCount()-1, seg2p2 );
+    // Отображение отрезков, с которыми сопрягается сплайн (красный цвет)
+    MbPlacement3D pls;
+    show( Style(3, RGB(255,0,0)), pSeg1, &pls );
+    show( Style(3, RGB(255,0,0)), pSeg2, &pls );
+
+    SArray<MbCartPoint> arrPnts;
+    pSpline->GetPointList( arrPnts );
+    // Отображение сплайна (синим цветом)
+    MbPlacement3D pl;
+    show( Style(4, RGB(0,0,255)), pSpline, &pl );
+    // Отображение полюсов (красный цвет)
+    for (int i = 0; i<arrPoles.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPoles[i], &pl );
+    // Отображение контрольных точек сплайна (пурпурный цвет)
+    for (int i = 0; i < arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,255)), arrPnts[i], &pl );
+    // Отображение контрольной ломаной сплайна (зеленый цвет)
+    for (int i = 0; i < arrPnts.size()-1; i++)
+    {
+        MbLineSegment* pSeg = new MbLineSegment(arrPnts[i], arrPnts[i+1]);
+        show( Style(3, RGB(0,255,0)), pSeg, &pl );
+        ::DeleteItem( pSeg );
+    }
+    ::DeleteItem( pSpline );
+    
+return true;
+}
+[end]
+[id = "code_block_16"]
+[begin]
+#include "setup.h"
+
+#include "cur_nurbs.h" // MbNurbs - NURBS-сплайн
+#include "cur_line_segment.h" // MbLineSegment – отрезок
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки сплайна
+    SArray<MbCartPoint> arrPnts(9);
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(-8.5, 24.3) );
+    arrPnts.Add( MbCartPoint(-3, 40.5) );
+    arrPnts.Add( MbCartPoint(25.6, 33.8) );
+    arrPnts.Add( MbCartPoint(37.5, 14.3) );
+    arrPnts.Add( MbCartPoint(69.3, 9.7) );
+    arrPnts.Add( MbCartPoint(98.7, 21.4) );
+    arrPnts.Add( MbCartPoint(104.5, 0) );
+    arrPnts.Add( MbCartPoint(140, 0) );
+    // Порядок сплайна: может быть больше 1 и не более числа контрольных точек
+    ptrdiff_t degree = 2;
+    // Построение незамкнутого NURBS-сплайна по контрольным точкам с помощью вызова
+    // статического метода MbNurbs::Create.
+    MbNurbs* pSpline = MbNurbs::Create( degree, arrPnts, false /* флаг замкнутости */ );
+    // Отображение контрольных точек
+    MbPlacement3D pl;
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(1, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение контрольной ломаной
+    for (int i = 0; i<arrPnts.size()-1; i++)
+    {
+        MbLineSegment* pSeg = new MbLineSegment(arrPnts[i], arrPnts[i+1]);
+        show( Style(1, RGB(0,255,0)), pSeg, &pl );
+        ::DeleteItem( pSeg );
+    }
+    // Отображение сплайна
+    show( Style(3, RGB(0,0,255)), pSpline, &pl );
+    // Уменьшение счетчиков ссылок динамически созданных объектов ядра
+    ::DeleteItem( pSpline );
+    
+    return true;
+}
+[end]
+[id = "code_block_17"]
+[begin]
+#include "setup.h"
+
+#include "cur_nurbs.h" // MbNurbs - NURBS-сплайн
+#include "cur_line_segment.h" // MbLineSegment - отрезок
+
+using namespace c3d;
+
+bool run()
+{
+    // Контрольные точки сплайна
+    SArray<MbCartPoint> arrPnts(9);
+    arrPnts.Add( MbCartPoint(0, 0) );
+    arrPnts.Add( MbCartPoint(-8.5, 24.3) );
+    arrPnts.Add( MbCartPoint(-3, 240.5) );
+    arrPnts.Add( MbCartPoint(25.6, 33.8) );
+    arrPnts.Add( MbCartPoint(37.5, 14.3) );
+    arrPnts.Add( MbCartPoint(69.3, 9.7) );
+    arrPnts.Add( MbCartPoint(98.7, 21.4) );
+    arrPnts.Add( MbCartPoint(104.5, 0) );
+    arrPnts.Add( MbCartPoint(140, 0)) ;
+    // Весовые коэффициенты контрольных точек
+    SArray<double> arrWeights(9);
+    arrWeights.Add(1.0);
+    arrWeights.Add(1.0);
+    arrWeights.Add(1000.0);
+    arrWeights.Add(1.0);
+    arrWeights.Add(1.0);
+    arrWeights.Add(1.0);
+    arrWeights.Add(1.0);
+    arrWeights.Add(1.0);
+    arrWeights.Add(1.0);
+    // Порядок сплайна: больше 1 и не больше числа контрольных точек
+    ptrdiff_t degree = 3;
+    // Построение незамкнутого NURBS-сплайна по контрольным точкам и их весам
+    MbNurbs* pSpline = MbNurbs::Create( degree, arrPnts, false, &arrWeights );
+    // Отображение контрольных точек
+    MbPlacement3D pl;
+    for (int i = 0; i<arrPnts.size(); i++)
+        show( Style(5, RGB(255,0,0)), arrPnts[i], &pl );
+    // Отображение контрольной ломаной
+    for (int i = 0; i<arrPnts.size()-1; i++)
+    {
+        MbLineSegment* pSeg = new MbLineSegment(arrPnts[i], arrPnts[i+1]);
+        show( Style(2, RGB(0,255,0)), pSeg, &pl );
+        ::DeleteItem( pSeg );
+    }
+    // Отображение сплайна
+    show( Style(3, RGB(0,0,255)), pSpline, &pl );
+    ::DeleteItem( pSpline );
+    
+    return true;
+}
+[end]
